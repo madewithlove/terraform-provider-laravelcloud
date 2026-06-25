@@ -24,14 +24,14 @@ specific, recurring ways that the preprocessor (`generator/preprocess`)
 neutralizes before generation. Understanding why each rule exists is the key to
 this skill — see "Preprocessing rules" and `references/crud-patterns.md`.
 
-The spec lives at `https://cloud.laravel.com/docs/api.json` (OpenAPI 3.1). The
+The spec lives at `https://cloud.laravel.com/api-docs/api.json` (OpenAPI 3.1). The
 API base is `https://cloud.laravel.com/api`, auth is a Bearer token, and — unlike
 Forge — resources are **not** organization-scoped in the path (the token implies
 the organization).
 
 ## When the API updates — the loop
 
-1. **Refresh the spec**: `make fetch-spec` (downloads `https://cloud.laravel.com/docs/api.json` to `generator/docs.openapi.json`).
+1. **Refresh the spec**: `make fetch-spec` (downloads `https://cloud.laravel.com/api-docs/api.json` to `generator/docs.openapi.json`).
 2. **Diff it**: `git diff generator/docs.openapi.json` — new paths, schemas, renamed/removed fields.
 3. **Update `generator/generator_config.yml`** for new resources or path/method changes (one block per resource: create/read/update/delete). Note Cloud uses **PATCH** for updates.
 4. **Update the preprocessor** if the change introduces a new recurring hazard (see "Preprocessing rules").

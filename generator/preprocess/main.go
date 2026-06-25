@@ -1,7 +1,7 @@
-// Command preprocess rewrites the raw Laravel Forge OpenAPI document into a
+// Command preprocess rewrites the raw Laravel Cloud OpenAPI document into a
 // form that is friendlier to the Terraform plugin code generators.
 //
-// The Forge API speaks JSON:API, which wraps payloads in a "data" envelope at
+// The Cloud API speaks JSON:API, which wraps payloads in a "data" envelope at
 // every level:
 //
 //	{ "data": { ...the actual resource... } }                 // response document
@@ -30,10 +30,14 @@
 //
 //  3. It flattens JSON:API resource objects -- shaped like
 //     {id, type, attributes: {...}, relationships: {...}, links: {...}} --
-//     by hoisting the "attributes" and "relationships" members up to the top
-//     level and dropping the "type" and "links" members. The resulting
-//     resource schema is flat (id + fields + relationship ids), which is the
-//     idiomatic Terraform shape and makes state mapping straightforward.
+//     by hoisting the "attributes" members up to the top level and dropping the
+//     "type", "links", and "relationships" members. The resulting resource
+//     schema is flat, which is the idiomatic Terraform shape and makes state
+//     mapping straightforward.
+//
+// It also genericizes discriminated unions to string maps, strips the JSON:API
+// "include" query parameter, renames reserved-word fields, and injects parent
+// path parameters; see the tables below.
 //
 // Usage:
 //
@@ -78,9 +82,10 @@ var responseFixes = map[string]map[string]string{
 // resource it must be renamed, since the OpenAPI generators have no notion of
 // reserved words. Extend this table if new collisions appear.
 var renames = map[string]map[string]string{
-	// "connection" is a reserved root block name in Terraform; expose the
-	// database's connection details under a non-reserved name.
+	// "connection" is a reserved root block name in Terraform; expose
+	// connection details under a non-reserved name wherever they appear.
 	"DatabaseResource": {"connection": "connection_details"},
+	"CacheResource":    {"connection": "connection_details"},
 }
 
 // parentParams injects the parent path-parameter(s) of a nested resource as
@@ -94,12 +99,15 @@ var renames = map[string]map[string]string{
 // resource model primarily from the create request body, so the parent must be
 // injected there to appear in the model).
 var parentParams = map[string][]string{
-	"CreateEnvironmentRequest":       {"application"},
-	"CreateInstanceRequest":          {"environment"},
-	"CreateBackgroundProcessRequest": {"instance"},
-	"CreateDomainRequest":            {"environment"},
-	"CreateCommandRequest":           {"environment"},
-	"StoreFilesystemKeyRequest":      {"filesystem"},
+	"CreateEnvironmentRequest":         {"application"},
+	"CreateInstanceRequest":            {"environment"},
+	"CreateBackgroundProcessRequest":   {"instance"},
+	"CreateDomainRequest":              {"environment"},
+	"CreateCommandRequest":             {"environment"},
+	"StoreFilesystemKeyRequest":        {"filesystem"},
+	"StoreDatabaseSchemaRequest":       {"database"},
+	"StoreDatabaseSnapshotRequest":     {"database"},
+	"StoreWebsocketApplicationRequest": {"websocketServer"},
 }
 
 // applyParentParams injects the configured parent path parameters as string

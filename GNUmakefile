@@ -5,7 +5,7 @@ TFPLUGINGEN_OPENAPI_VERSION   ?= v0.3.0
 TFPLUGINGEN_FRAMEWORK_VERSION ?= v0.4.1
 
 # Source of truth for the Forge API.
-OPENAPI_URL  ?= https://cloud.laravel.com/docs/api.json
+OPENAPI_URL  ?= https://cloud.laravel.com/api-docs/api.json
 RAW_SPEC     := generator/docs.openapi.json
 CLEAN_SPEC   := generator/docs.openapi.processed.json
 CODE_SPEC    := provider_code_spec.json

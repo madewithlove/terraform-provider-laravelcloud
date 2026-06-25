@@ -12,6 +12,9 @@ resources:
     update:
       path: /applications/{application}
       method: PATCH
+    delete:
+      path: /applications/{application}
+      method: DELETE
 
   environments:
     create:
@@ -55,21 +58,117 @@ resources:
       path: /background-processes/{backgroundProcess}
       method: DELETE
 
-  databases:
+  buckets:
     create:
-      path: /databases
+      path: /buckets
       method: POST
     read:
-      path: /databases/{database}
+      path: /buckets/{filesystem}
       method: GET
     update:
-      path: /databases/{database}
+      path: /buckets/{filesystem}
       method: PATCH
     delete:
-      path: /databases/{database}
+      path: /buckets/{filesystem}
+      method: DELETE
+
+  bucket_keys:
+    create:
+      path: /buckets/{filesystem}/keys
+      method: POST
+    read:
+      path: /bucket-keys/{filesystemKey}
+      method: GET
+    update:
+      path: /bucket-keys/{filesystemKey}
+      method: PATCH
+    delete:
+      path: /bucket-keys/{filesystemKey}
+      method: DELETE
+
+  caches:
+    create:
+      path: /caches
+      method: POST
+    read:
+      path: /caches/{cache}
+      method: GET
+    update:
+      path: /caches/{cache}
+      method: PATCH
+    delete:
+      path: /caches/{cache}
+      method: DELETE
+
+  database_clusters:
+    create:
+      path: /databases/clusters
+      method: POST
+    read:
+      path: /databases/clusters/{database}
+      method: GET
+    update:
+      path: /databases/clusters/{database}
+      method: PATCH
+    delete:
+      path: /databases/clusters/{database}
+      method: DELETE
+
+  database_schemas:
+    create:
+      path: /databases/clusters/{database}/databases
+      method: POST
+    read:
+      path: /databases/clusters/{database}/databases/{schema}
+      method: GET
+    delete:
+      path: /databases/clusters/{database}/databases/{schema}
+      method: DELETE
+
+  database_snapshots:
+    create:
+      path: /databases/clusters/{database}/snapshots
+      method: POST
+    read:
+      path: /database-snapshots/{databaseSnapshot}
+      method: GET
+    delete:
+      path: /database-snapshots/{databaseSnapshot}
+      method: DELETE
+
+  websocket_clusters:
+    create:
+      path: /websocket-servers
+      method: POST
+    read:
+      path: /websocket-servers/{websocketServer}
+      method: GET
+    update:
+      path: /websocket-servers/{websocketServer}
+      method: PATCH
+    delete:
+      path: /websocket-servers/{websocketServer}
+      method: DELETE
+
+  websocket_applications:
+    create:
+      path: /websocket-servers/{websocketServer}/applications
+      method: POST
+    read:
+      path: /websocket-applications/{websocketApplication}
+      method: GET
+    update:
+      path: /websocket-applications/{websocketApplication}
+      method: PATCH
+    delete:
+      path: /websocket-applications/{websocketApplication}
       method: DELETE
 
   domains:
+    schema:
+      ignores:
+        - wildcard
+        - www
     create:
       path: /environments/{environment}/domains
       method: POST
@@ -83,33 +182,13 @@ resources:
       path: /domains/{domain}
       method: DELETE
 
-  filesystems:
+  commands:
     create:
-      path: /filesystems
+      path: /environments/{environment}/commands
       method: POST
     read:
-      path: /filesystems/{filesystem}
+      path: /commands/{command}
       method: GET
-    update:
-      path: /filesystems/{filesystem}
-      method: PATCH
-    delete:
-      path: /filesystems/{filesystem}
-      method: DELETE
-
-  filesystem_keys:
-    create:
-      path: /filesystems/{filesystem}/keys
-      method: POST
-    read:
-      path: /filesystem-keys/{filesystemKey}
-      method: GET
-    update:
-      path: /filesystem-keys/{filesystemKey}
-      method: PATCH
-    delete:
-      path: /filesystem-keys/{filesystemKey}
-      method: DELETE
 
   deployments:
     create:
@@ -117,12 +196,4 @@ resources:
       method: POST
     read:
       path: /deployments/{deployment}
-      method: GET
-
-  commands:
-    create:
-      path: /environments/{environment}/commands
-      method: POST
-    read:
-      path: /commands/{command}
       method: GET
