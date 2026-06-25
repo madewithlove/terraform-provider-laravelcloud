@@ -32,9 +32,12 @@ resource "laravelcloud_applications" "example" {
 ### Optional
 
 - `application` (String) The application identifier
+- `cluster_id` (String) The identifier of a dedicated cluster to deploy to. Only fill it if your organization has a dedicated cluster and you want to use it for this application.
+- `source_control_provider_type` (String)
 
 ### Read-Only
 
+- `avatar_url` (String)
 - `created_at` (String)
 - `id` (String) The ID of this resource.
 - `slack_channel` (String)

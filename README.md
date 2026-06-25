@@ -2,7 +2,7 @@
 
 A Terraform provider for [Laravel Cloud](https://cloud.laravel.com), with
 resource schemas generated from the official Laravel Cloud OpenAPI document
-(`https://cloud.laravel.com/docs/api.json`) using the
+(`https://cloud.laravel.com/api-docs/api.json`) using the
 [HashiCorp OpenAPI provider code generators](https://developer.hashicorp.com/terraform/plugin/code-generation/openapi-generator),
 and hand-written CRUD on top.
 
@@ -40,9 +40,10 @@ resource "laravelcloud_applications" "example" {
 ## Resources
 
 CRUD (create, read, update where supported, delete, import) is implemented for:
-`applications`, `environments`, `instances`, `databases`, `domains`,
-`filesystems`, `filesystem_keys`, `background_processes`, `commands`,
-`deployments`.
+`applications`, `environments`, `instances`, `background_processes`,
+`buckets`, `bucket_keys`, `caches`, `database_clusters`, `database_schemas`,
+`database_snapshots`, `domains`, `commands`, `deployments`,
+`websocket_clusters`, `websocket_applications`.
 
 The schemas are generated from the OpenAPI document; the hand-written CRUD lives
 in `internal/provider/resource_*/*_resource.go`. Shared helpers are in

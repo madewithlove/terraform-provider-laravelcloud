@@ -1,0 +1,1 @@
+terraform import laravelcloud_websocket_applications.example websocket_server-id/the-id

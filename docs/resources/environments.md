@@ -31,6 +31,7 @@ resource "laravelcloud_environments" "example" {
 
 ### Optional
 
+- `cluster_id` (String) The identifier of a dedicated cluster to deploy to. Only fill it if your organization has a dedicated cluster and you want to use it for this environment.
 - `environment` (String) The environment identifier
 
 ## Import

@@ -14,13 +14,15 @@ Manages an instance of an environment in Laravel Cloud.
 
 ```terraform
 resource "laravelcloud_instances" "example" {
-  environment  = "environment-id"
-  max_replicas = 1
-  min_replicas = 1
-  name         = "example-name"
-  scaling_type = "none"
-  size         = "flex.c-1vcpu-256mb"
-  type         = "service"
+  environment        = "environment-id"
+  min_replicas       = 1
+  name               = "example-name"
+  polling_interval   = 1
+  scaling_type       = "none"
+  shutdown_timeout   = 1
+  size               = "flex-512mb"
+  type               = "service"
+  visibility_timeout = 1
 }
 ```
 
@@ -30,25 +32,32 @@ resource "laravelcloud_instances" "example" {
 ### Required
 
 - `environment` (String) The environment this resource belongs to.
-- `max_replicas` (Number)
-- `min_replicas` (Number)
+- `min_replicas` (Number) The minimum number of replicas the instance runs. Only applicable to the `custom` scaling type, and rejected when used with `auto`. Not applicable to managed queues, which always scale to zero when idle.
 - `name` (String)
+- `polling_interval` (Number) How often, in seconds (1–60), the queue is polled for new jobs. Null for non-queue instances.
 - `scaling_type` (String)
+- `shutdown_timeout` (Number)
 - `size` (String)
 - `type` (String)
+- `visibility_timeout` (Number) How long, in seconds (0–43200), a received job stays hidden from other workers before it becomes available again. Null for non-queue instances.
 
 ### Optional
 
 - `background_processes` (Attributes List) (see [below for nested schema](#nestedatt--background_processes))
 - `instance` (String) The instance identifier
+- `max_replicas` (Number) The maximum number of replicas the instance can scale to. Only applicable to the `custom` scaling type, and rejected when used with `auto`.
 - `scaling_cpu_threshold_percentage` (Number)
 - `scaling_memory_threshold_percentage` (Number)
+- `sleep_with_app` (Boolean) Whether worker replicas scale to zero alongside the app cluster, waking when they receive traffic. Only applicable to worker (service) instances.
 - `uses_scheduler` (Boolean)
 
 ### Read-Only
 
 - `created_at` (String)
 - `id` (String) The ID of this resource.
+- `is_default` (Boolean) Whether this is the environment's default managed queue. Null for non-queue instances.
+- `paused` (Boolean) Whether the managed queue is currently paused. Null for non-queue instances.
+- `queue_status` (String)
 
 <a id="nestedatt--background_processes"></a>
 ### Nested Schema for `background_processes`
@@ -69,7 +78,7 @@ Optional:
 Optional:
 
 - `backoff` (Number) Number of seconds to wait before retrying a failed job. Only applicable for 'worker' type background processes.
-- `connection` (String) The queue connection name. Only applicable for 'worker' type background processes.
+- `connection` (String) The queue connection name. Only applicable for 'worker' type background processes. Managed queues must use 'cloud'.
 - `force` (Boolean) Force the worker to run even in maintenance mode. Only applicable for 'worker' type background processes.
 - `queue` (String) The queue name(s) to process. Can be comma-separated for multiple queues. Only applicable for 'worker' type background processes.
 - `rest` (Number) Number of seconds to rest between jobs. Only applicable for 'worker' type background processes.

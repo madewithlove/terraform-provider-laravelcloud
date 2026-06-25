@@ -13,7 +13,10 @@ hand-written CRUD.
 
 - Provider configuration via `api_token` / `endpoint` (or `LARAVEL_CLOUD_TOKEN`
   / `LARAVEL_CLOUD_ENDPOINT`).
-- Resources: `applications`, `environments`, `instances`, `databases`,
-  `domains`, `filesystems`, `filesystem_keys`, `background_processes`,
-  `commands`, `deployments`, each with `terraform import` support.
-- A reproducible code-generation pipeline (`make generate`).
+- Resources: `applications`, `environments`, `instances`,
+  `background_processes`, `buckets`, `bucket_keys`, `caches`,
+  `database_clusters`, `database_schemas`, `database_snapshots`, `domains`,
+  `commands`, `deployments`, `websocket_clusters`, `websocket_applications`,
+  each with `terraform import` support.
+- A reproducible code-generation pipeline (`make generate`) driven by the full
+  OpenAPI document at `https://cloud.laravel.com/api-docs/api.json`.

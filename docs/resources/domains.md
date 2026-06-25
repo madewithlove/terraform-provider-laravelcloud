@@ -29,11 +29,46 @@ resource "laravelcloud_domains" "example" {
 
 ### Optional
 
+- `allow_downtime` (Boolean) Whether to allow downtime during domain verification. When true (flexible), the domain can be pointed directly without pre-verification. When false (uninterrupted), TXT-based pre-verification is required to avoid downtime.
+- `cloudflare_strategy` (String)
 - `domain` (String) The domain identifier
 - `verification_method` (String)
 - `verify` (Boolean) Whether the domain's DNS records should be verified and validated.
-- `wildcard_enabled` (Boolean)
+- `wildcard_enabled` (Boolean) Whether to enable a wildcard subdomain (*.example.com) for this domain.
 - `www_redirect` (String)
+
+### Read-Only
+
+- `action_required` (String)
+- `created_at` (String)
+- `dns_records` (Attributes) (see [below for nested schema](#nestedatt--dns_records))
+- `downtime` (Boolean)
+- `hostname_status` (String)
+- `id` (String) The ID of this resource.
+- `last_verified_at` (String)
+- `origin_status` (String)
+- `redirect` (String)
+- `ssl_status` (String)
+
+<a id="nestedatt--dns_records"></a>
+### Nested Schema for `dns_records`
+
+Read-Only:
+
+- `dcv` (String)
+- `origin` (String)
+- `origin_cname` (String)
+- `pre_verification` (String)
+- `ssl` (Attributes List) (see [below for nested schema](#nestedatt--dns_records--ssl))
+
+<a id="nestedatt--dns_records--ssl"></a>
+### Nested Schema for `dns_records.ssl`
+
+Read-Only:
+
+- `name` (String)
+- `type` (String)
+- `value` (String)
 
 ## Import
 

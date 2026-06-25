@@ -1,4 +1,4 @@
-resource "laravelcloud_filesystems" "example" {
+resource "laravelcloud_buckets" "example" {
   jurisdiction   = "default"
   key_name       = "example-key_name"
   key_permission = "read_write"
