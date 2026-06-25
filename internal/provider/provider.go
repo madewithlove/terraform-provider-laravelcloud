@@ -13,14 +13,19 @@ import (
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/cloud"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_applications"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_background_processes"
+	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_bucket_keys"
+	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_buckets"
+	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_caches"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_commands"
-	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_databases"
+	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_database_clusters"
+	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_database_schemas"
+	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_database_snapshots"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_deployments"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_domains"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_environments"
-	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_filesystem_keys"
-	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_filesystems"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_instances"
+	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_websocket_applications"
+	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_websocket_clusters"
 )
 
 type LaravelcloudProvider struct {
@@ -69,17 +74,14 @@ func (p *LaravelcloudProvider) Configure(ctx context.Context, req provider.Confi
 		return
 	}
 
-	// Configuration values take precedence over environment variables.
 	endpoint := os.Getenv("LARAVEL_CLOUD_ENDPOINT")
 	if !config.Endpoint.IsNull() {
 		endpoint = config.Endpoint.ValueString()
 	}
-
 	token := os.Getenv("LARAVEL_CLOUD_TOKEN")
 	if !config.APIToken.IsNull() {
 		token = config.APIToken.ValueString()
 	}
-
 	if token == "" {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("api_token"),
@@ -94,21 +96,23 @@ func (p *LaravelcloudProvider) Configure(ctx context.Context, req provider.Confi
 	resp.DataSourceData = client
 }
 
-// Resources returns the resources implemented by the provider. The schemas are
-// generated from the Laravel Cloud OpenAPI document; CRUD is implemented per
-// resource.
 func (p *LaravelcloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		resource_applications.NewApplicationsResource,
 		resource_background_processes.NewBackgroundProcessesResource,
+		resource_bucket_keys.NewBucketKeysResource,
+		resource_buckets.NewBucketsResource,
+		resource_caches.NewCachesResource,
 		resource_commands.NewCommandsResource,
-		resource_databases.NewDatabasesResource,
+		resource_database_clusters.NewDatabaseClustersResource,
+		resource_database_schemas.NewDatabaseSchemasResource,
+		resource_database_snapshots.NewDatabaseSnapshotsResource,
 		resource_deployments.NewDeploymentsResource,
 		resource_domains.NewDomainsResource,
 		resource_environments.NewEnvironmentsResource,
-		resource_filesystem_keys.NewFilesystemKeysResource,
-		resource_filesystems.NewFilesystemsResource,
 		resource_instances.NewInstancesResource,
+		resource_websocket_applications.NewWebsocketApplicationsResource,
+		resource_websocket_clusters.NewWebsocketClustersResource,
 	}
 }
 

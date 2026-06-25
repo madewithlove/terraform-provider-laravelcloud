@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
@@ -23,6 +24,12 @@ func EnvironmentsResourceSchema(ctx context.Context) schema.Schema {
 			"branch": schema.StringAttribute{
 				Required: true,
 			},
+			"cluster_id": schema.StringAttribute{
+				Optional:            true,
+				Computed:            true,
+				Description:         "The identifier of a dedicated cluster to deploy to. Only fill it if your organization has a dedicated cluster and you want to use it for this environment.",
+				MarkdownDescription: "The identifier of a dedicated cluster to deploy to. Only fill it if your organization has a dedicated cluster and you want to use it for this environment.",
+			},
 			"environment": schema.StringAttribute{
 				Optional:            true,
 				Computed:            true,
@@ -33,6 +40,7 @@ func EnvironmentsResourceSchema(ctx context.Context) schema.Schema {
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 40),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9 _-]+$"), ""),
 				},
 			},
 		},
@@ -42,6 +50,7 @@ func EnvironmentsResourceSchema(ctx context.Context) schema.Schema {
 type EnvironmentsModel struct {
 	Application types.String `tfsdk:"application"`
 	Branch      types.String `tfsdk:"branch"`
+	ClusterId   types.String `tfsdk:"cluster_id"`
 	Environment types.String `tfsdk:"environment"`
 	Name        types.String `tfsdk:"name"`
 }

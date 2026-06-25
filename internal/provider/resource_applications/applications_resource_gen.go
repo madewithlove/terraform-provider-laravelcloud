@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
@@ -20,6 +21,15 @@ func ApplicationsResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "The application identifier",
 				MarkdownDescription: "The application identifier",
 			},
+			"avatar_url": schema.StringAttribute{
+				Computed: true,
+			},
+			"cluster_id": schema.StringAttribute{
+				Optional:            true,
+				Computed:            true,
+				Description:         "The identifier of a dedicated cluster to deploy to. Only fill it if your organization has a dedicated cluster and you want to use it for this application.",
+				MarkdownDescription: "The identifier of a dedicated cluster to deploy to. Only fill it if your organization has a dedicated cluster and you want to use it for this application.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed: true,
 			},
@@ -30,6 +40,7 @@ func ApplicationsResourceSchema(ctx context.Context) schema.Schema {
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(3, 40),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[\\p{Latin}0-9 _.,'\\-&()!#+:@]+$"), ""),
 				},
 			},
 			"region": schema.StringAttribute{
@@ -38,12 +49,14 @@ func ApplicationsResourceSchema(ctx context.Context) schema.Schema {
 					stringvalidator.OneOf(
 						"us-east-2",
 						"us-east-1",
+						"ca-central-1",
 						"eu-central-1",
 						"eu-west-1",
 						"eu-west-2",
+						"me-central-1",
 						"ap-southeast-1",
 						"ap-southeast-2",
-						"ca-central-1",
+						"ap-northeast-1",
 					),
 				},
 			},
@@ -56,17 +69,31 @@ func ApplicationsResourceSchema(ctx context.Context) schema.Schema {
 			"slug": schema.StringAttribute{
 				Computed: true,
 			},
+			"source_control_provider_type": schema.StringAttribute{
+				Optional: true,
+				Computed: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"github",
+						"gitlab",
+						"bitbucket",
+					),
+				},
+			},
 		},
 	}
 }
 
 type ApplicationsModel struct {
-	Application  types.String `tfsdk:"application"`
-	CreatedAt    types.String `tfsdk:"created_at"`
-	Id           types.String `tfsdk:"id"`
-	Name         types.String `tfsdk:"name"`
-	Region       types.String `tfsdk:"region"`
-	Repository   types.String `tfsdk:"repository"`
-	SlackChannel types.String `tfsdk:"slack_channel"`
-	Slug         types.String `tfsdk:"slug"`
+	Application               types.String `tfsdk:"application"`
+	AvatarUrl                 types.String `tfsdk:"avatar_url"`
+	ClusterId                 types.String `tfsdk:"cluster_id"`
+	CreatedAt                 types.String `tfsdk:"created_at"`
+	Id                        types.String `tfsdk:"id"`
+	Name                      types.String `tfsdk:"name"`
+	Region                    types.String `tfsdk:"region"`
+	Repository                types.String `tfsdk:"repository"`
+	SlackChannel              types.String `tfsdk:"slack_channel"`
+	Slug                      types.String `tfsdk:"slug"`
+	SourceControlProviderType types.String `tfsdk:"source_control_provider_type"`
 }

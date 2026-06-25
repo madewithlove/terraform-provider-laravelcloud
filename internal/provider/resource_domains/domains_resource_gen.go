@@ -4,9 +4,15 @@ package resource_domains
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
@@ -14,11 +20,80 @@ import (
 func DomainsResourceSchema(ctx context.Context) schema.Schema {
 	return schema.Schema{
 		Attributes: map[string]schema.Attribute{
+			"action_required": schema.StringAttribute{
+				Computed: true,
+			},
+			"allow_downtime": schema.BoolAttribute{
+				Optional:            true,
+				Computed:            true,
+				Description:         "Whether to allow downtime during domain verification. When true (flexible), the domain can be pointed directly without pre-verification. When false (uninterrupted), TXT-based pre-verification is required to avoid downtime.",
+				MarkdownDescription: "Whether to allow downtime during domain verification. When true (flexible), the domain can be pointed directly without pre-verification. When false (uninterrupted), TXT-based pre-verification is required to avoid downtime.",
+			},
+			"cloudflare_strategy": schema.StringAttribute{
+				Optional: true,
+				Computed: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"dns_proxy",
+						"dns",
+						"none",
+					),
+				},
+			},
+			"created_at": schema.StringAttribute{
+				Computed: true,
+			},
+			"dns_records": schema.SingleNestedAttribute{
+				Attributes: map[string]schema.Attribute{
+					"dcv": schema.StringAttribute{
+						Computed: true,
+					},
+					"origin": schema.StringAttribute{
+						Computed: true,
+					},
+					"origin_cname": schema.StringAttribute{
+						Computed: true,
+					},
+					"pre_verification": schema.StringAttribute{
+						Computed: true,
+					},
+					"ssl": schema.ListNestedAttribute{
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"name": schema.StringAttribute{
+									Computed: true,
+								},
+								"type": schema.StringAttribute{
+									Computed: true,
+								},
+								"value": schema.StringAttribute{
+									Computed: true,
+								},
+							},
+							CustomType: SslType{
+								ObjectType: types.ObjectType{
+									AttrTypes: SslValue{}.AttributeTypes(ctx),
+								},
+							},
+						},
+						Computed: true,
+					},
+				},
+				CustomType: DnsRecordsType{
+					ObjectType: types.ObjectType{
+						AttrTypes: DnsRecordsValue{}.AttributeTypes(ctx),
+					},
+				},
+				Computed: true,
+			},
 			"domain": schema.StringAttribute{
 				Optional:            true,
 				Computed:            true,
 				Description:         "The domain identifier",
 				MarkdownDescription: "The domain identifier",
+			},
+			"downtime": schema.BoolAttribute{
+				Computed: true,
 			},
 			"environment": schema.StringAttribute{
 				Optional:            true,
@@ -26,11 +101,29 @@ func DomainsResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "The environment this resource belongs to.",
 				MarkdownDescription: "The environment this resource belongs to.",
 			},
+			"hostname_status": schema.StringAttribute{
+				Computed: true,
+			},
+			"id": schema.StringAttribute{
+				Computed: true,
+			},
+			"last_verified_at": schema.StringAttribute{
+				Computed: true,
+			},
 			"name": schema.StringAttribute{
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(3, 255),
 				},
+			},
+			"origin_status": schema.StringAttribute{
+				Computed: true,
+			},
+			"redirect": schema.StringAttribute{
+				Computed: true,
+			},
+			"ssl_status": schema.StringAttribute{
+				Computed: true,
 			},
 			"verification_method": schema.StringAttribute{
 				Optional: true,
@@ -49,8 +142,10 @@ func DomainsResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "Whether the domain's DNS records should be verified and validated.",
 			},
 			"wildcard_enabled": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				Optional:            true,
+				Computed:            true,
+				Description:         "Whether to enable a wildcard subdomain (*.example.com) for this domain.",
+				MarkdownDescription: "Whether to enable a wildcard subdomain (*.example.com) for this domain.",
 			},
 			"www_redirect": schema.StringAttribute{
 				Optional: true,
@@ -67,11 +162,1036 @@ func DomainsResourceSchema(ctx context.Context) schema.Schema {
 }
 
 type DomainsModel struct {
-	Domain             types.String `tfsdk:"domain"`
-	Environment        types.String `tfsdk:"environment"`
-	Name               types.String `tfsdk:"name"`
-	VerificationMethod types.String `tfsdk:"verification_method"`
-	Verify             types.Bool   `tfsdk:"verify"`
-	WildcardEnabled    types.Bool   `tfsdk:"wildcard_enabled"`
-	WwwRedirect        types.String `tfsdk:"www_redirect"`
+	ActionRequired     types.String    `tfsdk:"action_required"`
+	AllowDowntime      types.Bool      `tfsdk:"allow_downtime"`
+	CloudflareStrategy types.String    `tfsdk:"cloudflare_strategy"`
+	CreatedAt          types.String    `tfsdk:"created_at"`
+	DnsRecords         DnsRecordsValue `tfsdk:"dns_records"`
+	Domain             types.String    `tfsdk:"domain"`
+	Downtime           types.Bool      `tfsdk:"downtime"`
+	Environment        types.String    `tfsdk:"environment"`
+	HostnameStatus     types.String    `tfsdk:"hostname_status"`
+	Id                 types.String    `tfsdk:"id"`
+	LastVerifiedAt     types.String    `tfsdk:"last_verified_at"`
+	Name               types.String    `tfsdk:"name"`
+	OriginStatus       types.String    `tfsdk:"origin_status"`
+	Redirect           types.String    `tfsdk:"redirect"`
+	SslStatus          types.String    `tfsdk:"ssl_status"`
+	VerificationMethod types.String    `tfsdk:"verification_method"`
+	Verify             types.Bool      `tfsdk:"verify"`
+	WildcardEnabled    types.Bool      `tfsdk:"wildcard_enabled"`
+	WwwRedirect        types.String    `tfsdk:"www_redirect"`
+}
+
+var _ basetypes.ObjectTypable = DnsRecordsType{}
+
+type DnsRecordsType struct {
+	basetypes.ObjectType
+}
+
+func (t DnsRecordsType) Equal(o attr.Type) bool {
+	other, ok := o.(DnsRecordsType)
+
+	if !ok {
+		return false
+	}
+
+	return t.ObjectType.Equal(other.ObjectType)
+}
+
+func (t DnsRecordsType) String() string {
+	return "DnsRecordsType"
+}
+
+func (t DnsRecordsType) ValueFromObject(ctx context.Context, in basetypes.ObjectValue) (basetypes.ObjectValuable, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributes := in.Attributes()
+
+	dcvAttribute, ok := attributes["dcv"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`dcv is missing from object`)
+
+		return nil, diags
+	}
+
+	dcvVal, ok := dcvAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`dcv expected to be basetypes.StringValue, was: %T`, dcvAttribute))
+	}
+
+	originAttribute, ok := attributes["origin"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`origin is missing from object`)
+
+		return nil, diags
+	}
+
+	originVal, ok := originAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`origin expected to be basetypes.StringValue, was: %T`, originAttribute))
+	}
+
+	originCnameAttribute, ok := attributes["origin_cname"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`origin_cname is missing from object`)
+
+		return nil, diags
+	}
+
+	originCnameVal, ok := originCnameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`origin_cname expected to be basetypes.StringValue, was: %T`, originCnameAttribute))
+	}
+
+	preVerificationAttribute, ok := attributes["pre_verification"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`pre_verification is missing from object`)
+
+		return nil, diags
+	}
+
+	preVerificationVal, ok := preVerificationAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`pre_verification expected to be basetypes.StringValue, was: %T`, preVerificationAttribute))
+	}
+
+	sslAttribute, ok := attributes["ssl"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`ssl is missing from object`)
+
+		return nil, diags
+	}
+
+	sslVal, ok := sslAttribute.(basetypes.ListValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`ssl expected to be basetypes.ListValue, was: %T`, sslAttribute))
+	}
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	return DnsRecordsValue{
+		Dcv:             dcvVal,
+		Origin:          originVal,
+		OriginCname:     originCnameVal,
+		PreVerification: preVerificationVal,
+		Ssl:             sslVal,
+		state:           attr.ValueStateKnown,
+	}, diags
+}
+
+func NewDnsRecordsValueNull() DnsRecordsValue {
+	return DnsRecordsValue{
+		state: attr.ValueStateNull,
+	}
+}
+
+func NewDnsRecordsValueUnknown() DnsRecordsValue {
+	return DnsRecordsValue{
+		state: attr.ValueStateUnknown,
+	}
+}
+
+func NewDnsRecordsValue(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) (DnsRecordsValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	// Reference: https://github.com/hashicorp/terraform-plugin-framework/issues/521
+	ctx := context.Background()
+
+	for name, attributeType := range attributeTypes {
+		attribute, ok := attributes[name]
+
+		if !ok {
+			diags.AddError(
+				"Missing DnsRecordsValue Attribute Value",
+				"While creating a DnsRecordsValue value, a missing attribute value was detected. "+
+					"A DnsRecordsValue must contain values for all attributes, even if null or unknown. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("DnsRecordsValue Attribute Name (%s) Expected Type: %s", name, attributeType.String()),
+			)
+
+			continue
+		}
+
+		if !attributeType.Equal(attribute.Type(ctx)) {
+			diags.AddError(
+				"Invalid DnsRecordsValue Attribute Type",
+				"While creating a DnsRecordsValue value, an invalid attribute value was detected. "+
+					"A DnsRecordsValue must use a matching attribute type for the value. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("DnsRecordsValue Attribute Name (%s) Expected Type: %s\n", name, attributeType.String())+
+					fmt.Sprintf("DnsRecordsValue Attribute Name (%s) Given Type: %s", name, attribute.Type(ctx)),
+			)
+		}
+	}
+
+	for name := range attributes {
+		_, ok := attributeTypes[name]
+
+		if !ok {
+			diags.AddError(
+				"Extra DnsRecordsValue Attribute Value",
+				"While creating a DnsRecordsValue value, an extra attribute value was detected. "+
+					"A DnsRecordsValue must not contain values beyond the expected attribute types. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("Extra DnsRecordsValue Attribute Name: %s", name),
+			)
+		}
+	}
+
+	if diags.HasError() {
+		return NewDnsRecordsValueUnknown(), diags
+	}
+
+	dcvAttribute, ok := attributes["dcv"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`dcv is missing from object`)
+
+		return NewDnsRecordsValueUnknown(), diags
+	}
+
+	dcvVal, ok := dcvAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`dcv expected to be basetypes.StringValue, was: %T`, dcvAttribute))
+	}
+
+	originAttribute, ok := attributes["origin"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`origin is missing from object`)
+
+		return NewDnsRecordsValueUnknown(), diags
+	}
+
+	originVal, ok := originAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`origin expected to be basetypes.StringValue, was: %T`, originAttribute))
+	}
+
+	originCnameAttribute, ok := attributes["origin_cname"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`origin_cname is missing from object`)
+
+		return NewDnsRecordsValueUnknown(), diags
+	}
+
+	originCnameVal, ok := originCnameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`origin_cname expected to be basetypes.StringValue, was: %T`, originCnameAttribute))
+	}
+
+	preVerificationAttribute, ok := attributes["pre_verification"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`pre_verification is missing from object`)
+
+		return NewDnsRecordsValueUnknown(), diags
+	}
+
+	preVerificationVal, ok := preVerificationAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`pre_verification expected to be basetypes.StringValue, was: %T`, preVerificationAttribute))
+	}
+
+	sslAttribute, ok := attributes["ssl"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`ssl is missing from object`)
+
+		return NewDnsRecordsValueUnknown(), diags
+	}
+
+	sslVal, ok := sslAttribute.(basetypes.ListValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`ssl expected to be basetypes.ListValue, was: %T`, sslAttribute))
+	}
+
+	if diags.HasError() {
+		return NewDnsRecordsValueUnknown(), diags
+	}
+
+	return DnsRecordsValue{
+		Dcv:             dcvVal,
+		Origin:          originVal,
+		OriginCname:     originCnameVal,
+		PreVerification: preVerificationVal,
+		Ssl:             sslVal,
+		state:           attr.ValueStateKnown,
+	}, diags
+}
+
+func NewDnsRecordsValueMust(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) DnsRecordsValue {
+	object, diags := NewDnsRecordsValue(attributeTypes, attributes)
+
+	if diags.HasError() {
+		// This could potentially be added to the diag package.
+		diagsStrings := make([]string, 0, len(diags))
+
+		for _, diagnostic := range diags {
+			diagsStrings = append(diagsStrings, fmt.Sprintf(
+				"%s | %s | %s",
+				diagnostic.Severity(),
+				diagnostic.Summary(),
+				diagnostic.Detail()))
+		}
+
+		panic("NewDnsRecordsValueMust received error(s): " + strings.Join(diagsStrings, "\n"))
+	}
+
+	return object
+}
+
+func (t DnsRecordsType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
+	if in.Type() == nil {
+		return NewDnsRecordsValueNull(), nil
+	}
+
+	if !in.Type().Equal(t.TerraformType(ctx)) {
+		return nil, fmt.Errorf("expected %s, got %s", t.TerraformType(ctx), in.Type())
+	}
+
+	if !in.IsKnown() {
+		return NewDnsRecordsValueUnknown(), nil
+	}
+
+	if in.IsNull() {
+		return NewDnsRecordsValueNull(), nil
+	}
+
+	attributes := map[string]attr.Value{}
+
+	val := map[string]tftypes.Value{}
+
+	err := in.As(&val)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range val {
+		a, err := t.AttrTypes[k].ValueFromTerraform(ctx, v)
+
+		if err != nil {
+			return nil, err
+		}
+
+		attributes[k] = a
+	}
+
+	return NewDnsRecordsValueMust(DnsRecordsValue{}.AttributeTypes(ctx), attributes), nil
+}
+
+func (t DnsRecordsType) ValueType(ctx context.Context) attr.Value {
+	return DnsRecordsValue{}
+}
+
+var _ basetypes.ObjectValuable = DnsRecordsValue{}
+
+type DnsRecordsValue struct {
+	Dcv             basetypes.StringValue `tfsdk:"dcv"`
+	Origin          basetypes.StringValue `tfsdk:"origin"`
+	OriginCname     basetypes.StringValue `tfsdk:"origin_cname"`
+	PreVerification basetypes.StringValue `tfsdk:"pre_verification"`
+	Ssl             basetypes.ListValue   `tfsdk:"ssl"`
+	state           attr.ValueState
+}
+
+func (v DnsRecordsValue) ToTerraformValue(ctx context.Context) (tftypes.Value, error) {
+	attrTypes := make(map[string]tftypes.Type, 5)
+
+	var val tftypes.Value
+	var err error
+
+	attrTypes["dcv"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["origin"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["origin_cname"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["pre_verification"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["ssl"] = basetypes.ListType{
+		ElemType: SslValue{}.Type(ctx),
+	}.TerraformType(ctx)
+
+	objectType := tftypes.Object{AttributeTypes: attrTypes}
+
+	switch v.state {
+	case attr.ValueStateKnown:
+		vals := make(map[string]tftypes.Value, 5)
+
+		val, err = v.Dcv.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["dcv"] = val
+
+		val, err = v.Origin.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["origin"] = val
+
+		val, err = v.OriginCname.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["origin_cname"] = val
+
+		val, err = v.PreVerification.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["pre_verification"] = val
+
+		val, err = v.Ssl.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["ssl"] = val
+
+		if err := tftypes.ValidateValue(objectType, vals); err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		return tftypes.NewValue(objectType, vals), nil
+	case attr.ValueStateNull:
+		return tftypes.NewValue(objectType, nil), nil
+	case attr.ValueStateUnknown:
+		return tftypes.NewValue(objectType, tftypes.UnknownValue), nil
+	default:
+		panic(fmt.Sprintf("unhandled Object state in ToTerraformValue: %s", v.state))
+	}
+}
+
+func (v DnsRecordsValue) IsNull() bool {
+	return v.state == attr.ValueStateNull
+}
+
+func (v DnsRecordsValue) IsUnknown() bool {
+	return v.state == attr.ValueStateUnknown
+}
+
+func (v DnsRecordsValue) String() string {
+	return "DnsRecordsValue"
+}
+
+func (v DnsRecordsValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	ssl := types.ListValueMust(
+		SslType{
+			basetypes.ObjectType{
+				AttrTypes: SslValue{}.AttributeTypes(ctx),
+			},
+		},
+		v.Ssl.Elements(),
+	)
+
+	if v.Ssl.IsNull() {
+		ssl = types.ListNull(
+			SslType{
+				basetypes.ObjectType{
+					AttrTypes: SslValue{}.AttributeTypes(ctx),
+				},
+			},
+		)
+	}
+
+	if v.Ssl.IsUnknown() {
+		ssl = types.ListUnknown(
+			SslType{
+				basetypes.ObjectType{
+					AttrTypes: SslValue{}.AttributeTypes(ctx),
+				},
+			},
+		)
+	}
+
+	attributeTypes := map[string]attr.Type{
+		"dcv":              basetypes.StringType{},
+		"origin":           basetypes.StringType{},
+		"origin_cname":     basetypes.StringType{},
+		"pre_verification": basetypes.StringType{},
+		"ssl": basetypes.ListType{
+			ElemType: SslValue{}.Type(ctx),
+		},
+	}
+
+	if v.IsNull() {
+		return types.ObjectNull(attributeTypes), diags
+	}
+
+	if v.IsUnknown() {
+		return types.ObjectUnknown(attributeTypes), diags
+	}
+
+	objVal, diags := types.ObjectValue(
+		attributeTypes,
+		map[string]attr.Value{
+			"dcv":              v.Dcv,
+			"origin":           v.Origin,
+			"origin_cname":     v.OriginCname,
+			"pre_verification": v.PreVerification,
+			"ssl":              ssl,
+		})
+
+	return objVal, diags
+}
+
+func (v DnsRecordsValue) Equal(o attr.Value) bool {
+	other, ok := o.(DnsRecordsValue)
+
+	if !ok {
+		return false
+	}
+
+	if v.state != other.state {
+		return false
+	}
+
+	if v.state != attr.ValueStateKnown {
+		return true
+	}
+
+	if !v.Dcv.Equal(other.Dcv) {
+		return false
+	}
+
+	if !v.Origin.Equal(other.Origin) {
+		return false
+	}
+
+	if !v.OriginCname.Equal(other.OriginCname) {
+		return false
+	}
+
+	if !v.PreVerification.Equal(other.PreVerification) {
+		return false
+	}
+
+	if !v.Ssl.Equal(other.Ssl) {
+		return false
+	}
+
+	return true
+}
+
+func (v DnsRecordsValue) Type(ctx context.Context) attr.Type {
+	return DnsRecordsType{
+		basetypes.ObjectType{
+			AttrTypes: v.AttributeTypes(ctx),
+		},
+	}
+}
+
+func (v DnsRecordsValue) AttributeTypes(ctx context.Context) map[string]attr.Type {
+	return map[string]attr.Type{
+		"dcv":              basetypes.StringType{},
+		"origin":           basetypes.StringType{},
+		"origin_cname":     basetypes.StringType{},
+		"pre_verification": basetypes.StringType{},
+		"ssl": basetypes.ListType{
+			ElemType: SslValue{}.Type(ctx),
+		},
+	}
+}
+
+var _ basetypes.ObjectTypable = SslType{}
+
+type SslType struct {
+	basetypes.ObjectType
+}
+
+func (t SslType) Equal(o attr.Type) bool {
+	other, ok := o.(SslType)
+
+	if !ok {
+		return false
+	}
+
+	return t.ObjectType.Equal(other.ObjectType)
+}
+
+func (t SslType) String() string {
+	return "SslType"
+}
+
+func (t SslType) ValueFromObject(ctx context.Context, in basetypes.ObjectValue) (basetypes.ObjectValuable, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributes := in.Attributes()
+
+	nameAttribute, ok := attributes["name"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`name is missing from object`)
+
+		return nil, diags
+	}
+
+	nameVal, ok := nameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`name expected to be basetypes.StringValue, was: %T`, nameAttribute))
+	}
+
+	typeAttribute, ok := attributes["type"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`type is missing from object`)
+
+		return nil, diags
+	}
+
+	typeVal, ok := typeAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`type expected to be basetypes.StringValue, was: %T`, typeAttribute))
+	}
+
+	valueAttribute, ok := attributes["value"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`value is missing from object`)
+
+		return nil, diags
+	}
+
+	valueVal, ok := valueAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`value expected to be basetypes.StringValue, was: %T`, valueAttribute))
+	}
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	return SslValue{
+		Name:    nameVal,
+		SslType: typeVal,
+		Value:   valueVal,
+		state:   attr.ValueStateKnown,
+	}, diags
+}
+
+func NewSslValueNull() SslValue {
+	return SslValue{
+		state: attr.ValueStateNull,
+	}
+}
+
+func NewSslValueUnknown() SslValue {
+	return SslValue{
+		state: attr.ValueStateUnknown,
+	}
+}
+
+func NewSslValue(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) (SslValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	// Reference: https://github.com/hashicorp/terraform-plugin-framework/issues/521
+	ctx := context.Background()
+
+	for name, attributeType := range attributeTypes {
+		attribute, ok := attributes[name]
+
+		if !ok {
+			diags.AddError(
+				"Missing SslValue Attribute Value",
+				"While creating a SslValue value, a missing attribute value was detected. "+
+					"A SslValue must contain values for all attributes, even if null or unknown. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("SslValue Attribute Name (%s) Expected Type: %s", name, attributeType.String()),
+			)
+
+			continue
+		}
+
+		if !attributeType.Equal(attribute.Type(ctx)) {
+			diags.AddError(
+				"Invalid SslValue Attribute Type",
+				"While creating a SslValue value, an invalid attribute value was detected. "+
+					"A SslValue must use a matching attribute type for the value. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("SslValue Attribute Name (%s) Expected Type: %s\n", name, attributeType.String())+
+					fmt.Sprintf("SslValue Attribute Name (%s) Given Type: %s", name, attribute.Type(ctx)),
+			)
+		}
+	}
+
+	for name := range attributes {
+		_, ok := attributeTypes[name]
+
+		if !ok {
+			diags.AddError(
+				"Extra SslValue Attribute Value",
+				"While creating a SslValue value, an extra attribute value was detected. "+
+					"A SslValue must not contain values beyond the expected attribute types. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("Extra SslValue Attribute Name: %s", name),
+			)
+		}
+	}
+
+	if diags.HasError() {
+		return NewSslValueUnknown(), diags
+	}
+
+	nameAttribute, ok := attributes["name"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`name is missing from object`)
+
+		return NewSslValueUnknown(), diags
+	}
+
+	nameVal, ok := nameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`name expected to be basetypes.StringValue, was: %T`, nameAttribute))
+	}
+
+	typeAttribute, ok := attributes["type"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`type is missing from object`)
+
+		return NewSslValueUnknown(), diags
+	}
+
+	typeVal, ok := typeAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`type expected to be basetypes.StringValue, was: %T`, typeAttribute))
+	}
+
+	valueAttribute, ok := attributes["value"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`value is missing from object`)
+
+		return NewSslValueUnknown(), diags
+	}
+
+	valueVal, ok := valueAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`value expected to be basetypes.StringValue, was: %T`, valueAttribute))
+	}
+
+	if diags.HasError() {
+		return NewSslValueUnknown(), diags
+	}
+
+	return SslValue{
+		Name:    nameVal,
+		SslType: typeVal,
+		Value:   valueVal,
+		state:   attr.ValueStateKnown,
+	}, diags
+}
+
+func NewSslValueMust(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) SslValue {
+	object, diags := NewSslValue(attributeTypes, attributes)
+
+	if diags.HasError() {
+		// This could potentially be added to the diag package.
+		diagsStrings := make([]string, 0, len(diags))
+
+		for _, diagnostic := range diags {
+			diagsStrings = append(diagsStrings, fmt.Sprintf(
+				"%s | %s | %s",
+				diagnostic.Severity(),
+				diagnostic.Summary(),
+				diagnostic.Detail()))
+		}
+
+		panic("NewSslValueMust received error(s): " + strings.Join(diagsStrings, "\n"))
+	}
+
+	return object
+}
+
+func (t SslType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
+	if in.Type() == nil {
+		return NewSslValueNull(), nil
+	}
+
+	if !in.Type().Equal(t.TerraformType(ctx)) {
+		return nil, fmt.Errorf("expected %s, got %s", t.TerraformType(ctx), in.Type())
+	}
+
+	if !in.IsKnown() {
+		return NewSslValueUnknown(), nil
+	}
+
+	if in.IsNull() {
+		return NewSslValueNull(), nil
+	}
+
+	attributes := map[string]attr.Value{}
+
+	val := map[string]tftypes.Value{}
+
+	err := in.As(&val)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range val {
+		a, err := t.AttrTypes[k].ValueFromTerraform(ctx, v)
+
+		if err != nil {
+			return nil, err
+		}
+
+		attributes[k] = a
+	}
+
+	return NewSslValueMust(SslValue{}.AttributeTypes(ctx), attributes), nil
+}
+
+func (t SslType) ValueType(ctx context.Context) attr.Value {
+	return SslValue{}
+}
+
+var _ basetypes.ObjectValuable = SslValue{}
+
+type SslValue struct {
+	Name    basetypes.StringValue `tfsdk:"name"`
+	SslType basetypes.StringValue `tfsdk:"type"`
+	Value   basetypes.StringValue `tfsdk:"value"`
+	state   attr.ValueState
+}
+
+func (v SslValue) ToTerraformValue(ctx context.Context) (tftypes.Value, error) {
+	attrTypes := make(map[string]tftypes.Type, 3)
+
+	var val tftypes.Value
+	var err error
+
+	attrTypes["name"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["type"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["value"] = basetypes.StringType{}.TerraformType(ctx)
+
+	objectType := tftypes.Object{AttributeTypes: attrTypes}
+
+	switch v.state {
+	case attr.ValueStateKnown:
+		vals := make(map[string]tftypes.Value, 3)
+
+		val, err = v.Name.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["name"] = val
+
+		val, err = v.SslType.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["type"] = val
+
+		val, err = v.Value.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["value"] = val
+
+		if err := tftypes.ValidateValue(objectType, vals); err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		return tftypes.NewValue(objectType, vals), nil
+	case attr.ValueStateNull:
+		return tftypes.NewValue(objectType, nil), nil
+	case attr.ValueStateUnknown:
+		return tftypes.NewValue(objectType, tftypes.UnknownValue), nil
+	default:
+		panic(fmt.Sprintf("unhandled Object state in ToTerraformValue: %s", v.state))
+	}
+}
+
+func (v SslValue) IsNull() bool {
+	return v.state == attr.ValueStateNull
+}
+
+func (v SslValue) IsUnknown() bool {
+	return v.state == attr.ValueStateUnknown
+}
+
+func (v SslValue) String() string {
+	return "SslValue"
+}
+
+func (v SslValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributeTypes := map[string]attr.Type{
+		"name":  basetypes.StringType{},
+		"type":  basetypes.StringType{},
+		"value": basetypes.StringType{},
+	}
+
+	if v.IsNull() {
+		return types.ObjectNull(attributeTypes), diags
+	}
+
+	if v.IsUnknown() {
+		return types.ObjectUnknown(attributeTypes), diags
+	}
+
+	objVal, diags := types.ObjectValue(
+		attributeTypes,
+		map[string]attr.Value{
+			"name":  v.Name,
+			"type":  v.SslType,
+			"value": v.Value,
+		})
+
+	return objVal, diags
+}
+
+func (v SslValue) Equal(o attr.Value) bool {
+	other, ok := o.(SslValue)
+
+	if !ok {
+		return false
+	}
+
+	if v.state != other.state {
+		return false
+	}
+
+	if v.state != attr.ValueStateKnown {
+		return true
+	}
+
+	if !v.Name.Equal(other.Name) {
+		return false
+	}
+
+	if !v.SslType.Equal(other.SslType) {
+		return false
+	}
+
+	if !v.Value.Equal(other.Value) {
+		return false
+	}
+
+	return true
+}
+
+func (v SslValue) Type(ctx context.Context) attr.Type {
+	return SslType{
+		basetypes.ObjectType{
+			AttrTypes: v.AttributeTypes(ctx),
+		},
+	}
+}
+
+func (v SslValue) AttributeTypes(ctx context.Context) map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":  basetypes.StringType{},
+		"type":  basetypes.StringType{},
+		"value": basetypes.StringType{},
+	}
 }

@@ -41,8 +41,8 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 								"connection": schema.StringAttribute{
 									Optional:            true,
 									Computed:            true,
-									Description:         "The queue connection name. Only applicable for 'worker' type background processes.",
-									MarkdownDescription: "The queue connection name. Only applicable for 'worker' type background processes.",
+									Description:         "The queue connection name. Only applicable for 'worker' type background processes. Managed queues must use 'cloud'.",
+									MarkdownDescription: "The queue connection name. Only applicable for 'worker' type background processes. Managed queues must use 'cloud'.",
 								},
 								"force": schema.BoolAttribute{
 									Optional:            true,
@@ -132,23 +132,43 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 				Description:         "The instance identifier",
 				MarkdownDescription: "The instance identifier",
 			},
+			"is_default": schema.BoolAttribute{
+				Computed:            true,
+				Description:         "Whether this is the environment's default managed queue. Null for non-queue instances.",
+				MarkdownDescription: "Whether this is the environment's default managed queue. Null for non-queue instances.",
+			},
 			"max_replicas": schema.Int64Attribute{
-				Required: true,
-				Validators: []validator.Int64{
-					int64validator.Between(1, 0),
-				},
+				Optional:            true,
+				Computed:            true,
+				Description:         "The maximum number of replicas the instance can scale to. Only applicable to the `custom` scaling type, and rejected when used with `auto`.",
+				MarkdownDescription: "The maximum number of replicas the instance can scale to. Only applicable to the `custom` scaling type, and rejected when used with `auto`.",
 			},
 			"min_replicas": schema.Int64Attribute{
-				Required: true,
-				Validators: []validator.Int64{
-					int64validator.Between(1, 0),
-				},
+				Required:            true,
+				Description:         "The minimum number of replicas the instance runs. Only applicable to the `custom` scaling type, and rejected when used with `auto`. Not applicable to managed queues, which always scale to zero when idle.",
+				MarkdownDescription: "The minimum number of replicas the instance runs. Only applicable to the `custom` scaling type, and rejected when used with `auto`. Not applicable to managed queues, which always scale to zero when idle.",
 			},
 			"name": schema.StringAttribute{
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(3, 40),
 				},
+			},
+			"paused": schema.BoolAttribute{
+				Computed:            true,
+				Description:         "Whether the managed queue is currently paused. Null for non-queue instances.",
+				MarkdownDescription: "Whether the managed queue is currently paused. Null for non-queue instances.",
+			},
+			"polling_interval": schema.Int64Attribute{
+				Required:            true,
+				Description:         "How often, in seconds (1–60), the queue is polled for new jobs. Null for non-queue instances.",
+				MarkdownDescription: "How often, in seconds (1–60), the queue is polled for new jobs. Null for non-queue instances.",
+				Validators: []validator.Int64{
+					int64validator.Between(1, 60),
+				},
+			},
+			"queue_status": schema.StringAttribute{
+				Computed: true,
 			},
 			"scaling_cpu_threshold_percentage": schema.Int64Attribute{
 				Optional: true,
@@ -174,10 +194,19 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 					),
 				},
 			},
+			"shutdown_timeout": schema.Int64Attribute{
+				Required: true,
+				Validators: []validator.Int64{
+					int64validator.Between(1, 0),
+				},
+			},
 			"size": schema.StringAttribute{
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
+						"flex-512mb",
+						"flex-1gb",
+						"flex-2gb",
 						"flex.c-1vcpu-256mb",
 						"flex.g-1vcpu-512mb",
 						"flex.m-1vcpu-1gb",
@@ -214,20 +243,47 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 						"dedicated.c-8vcpu-16gb",
 						"dedicated.g-8vcpu-32gb",
 						"dedicated.m-8vcpu-64gb",
+						"mq-pro-256mb",
+						"mq-pro-512mb",
+						"mq-pro-1gb",
+						"mq-pro-2gb",
+						"mq-pro-4gb",
+						"mq-pro-8gb",
+						"mq-dedicated-256mb",
+						"mq-dedicated-512mb",
+						"mq-dedicated-1gb",
+						"mq-dedicated-2gb",
+						"mq-dedicated-4gb",
+						"mq-dedicated-8gb",
 					),
 				},
+			},
+			"sleep_with_app": schema.BoolAttribute{
+				Optional:            true,
+				Computed:            true,
+				Description:         "Whether worker replicas scale to zero alongside the app cluster, waking when they receive traffic. Only applicable to worker (service) instances.",
+				MarkdownDescription: "Whether worker replicas scale to zero alongside the app cluster, waking when they receive traffic. Only applicable to worker (service) instances.",
 			},
 			"type": schema.StringAttribute{
 				Required: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"service",
+						"managed_queue",
 					),
 				},
 			},
 			"uses_scheduler": schema.BoolAttribute{
 				Optional: true,
 				Computed: true,
+			},
+			"visibility_timeout": schema.Int64Attribute{
+				Required:            true,
+				Description:         "How long, in seconds (0–43200), a received job stays hidden from other workers before it becomes available again. Null for non-queue instances.",
+				MarkdownDescription: "How long, in seconds (0–43200), a received job stays hidden from other workers before it becomes available again. Null for non-queue instances.",
+				Validators: []validator.Int64{
+					int64validator.Between(0, 43200),
+				},
 			},
 		},
 	}
@@ -239,15 +295,22 @@ type InstancesModel struct {
 	Environment                      types.String `tfsdk:"environment"`
 	Id                               types.String `tfsdk:"id"`
 	Instance                         types.String `tfsdk:"instance"`
+	IsDefault                        types.Bool   `tfsdk:"is_default"`
 	MaxReplicas                      types.Int64  `tfsdk:"max_replicas"`
 	MinReplicas                      types.Int64  `tfsdk:"min_replicas"`
 	Name                             types.String `tfsdk:"name"`
+	Paused                           types.Bool   `tfsdk:"paused"`
+	PollingInterval                  types.Int64  `tfsdk:"polling_interval"`
+	QueueStatus                      types.String `tfsdk:"queue_status"`
 	ScalingCpuThresholdPercentage    types.Int64  `tfsdk:"scaling_cpu_threshold_percentage"`
 	ScalingMemoryThresholdPercentage types.Int64  `tfsdk:"scaling_memory_threshold_percentage"`
 	ScalingType                      types.String `tfsdk:"scaling_type"`
+	ShutdownTimeout                  types.Int64  `tfsdk:"shutdown_timeout"`
 	Size                             types.String `tfsdk:"size"`
+	SleepWithApp                     types.Bool   `tfsdk:"sleep_with_app"`
 	Type                             types.String `tfsdk:"type"`
 	UsesScheduler                    types.Bool   `tfsdk:"uses_scheduler"`
+	VisibilityTimeout                types.Int64  `tfsdk:"visibility_timeout"`
 }
 
 var _ basetypes.ObjectTypable = BackgroundProcessesType{}

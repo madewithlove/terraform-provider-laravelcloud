@@ -8,6 +8,13 @@
 			"schema": {
 				"attributes": [
 					{
+						"name": "cluster_id",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The identifier of a dedicated cluster to deploy to. Only fill it if your organization has a dedicated cluster and you want to use it for this application."
+						}
+					},
+					{
 						"name": "name",
 						"string": {
 							"computed_optional_required": "required",
@@ -20,6 +27,19 @@
 											}
 										],
 										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								},
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "regexp"
+											},
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[\\\\p{Latin}0-9 _.,'\\\\-\u0026()!#+:@]+$\"), \"\")"
 									}
 								}
 							]
@@ -37,7 +57,7 @@
 												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 											}
 										],
-										"schema_definition": "stringvalidator.OneOf(\n\"us-east-2\",\n\"us-east-1\",\n\"eu-central-1\",\n\"eu-west-1\",\n\"eu-west-2\",\n\"ap-southeast-1\",\n\"ap-southeast-2\",\n\"ca-central-1\",\n)"
+										"schema_definition": "stringvalidator.OneOf(\n\"us-east-2\",\n\"us-east-1\",\n\"ca-central-1\",\n\"eu-central-1\",\n\"eu-west-1\",\n\"eu-west-2\",\n\"me-central-1\",\n\"ap-southeast-1\",\n\"ap-southeast-2\",\n\"ap-northeast-1\",\n)"
 									}
 								}
 							]
@@ -47,6 +67,30 @@
 						"name": "repository",
 						"string": {
 							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "source_control_provider_type",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"github\",\n\"gitlab\",\n\"bitbucket\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "avatar_url",
+						"string": {
+							"computed_optional_required": "computed"
 						}
 					},
 					{
@@ -212,6 +256,515 @@
 			}
 		},
 		{
+			"name": "bucket_keys",
+			"schema": {
+				"attributes": [
+					{
+						"name": "filesystem",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The filesystem this resource belongs to."
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "permission",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"read_write\",\n\"read_only\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "access_key_id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "access_key_secret",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "filesystem_key",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The filesystem key identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "buckets",
+			"schema": {
+				"attributes": [
+					{
+						"name": "allowed_origins",
+						"list": {
+							"computed_optional_required": "computed_optional",
+							"element_type": {
+								"string": {}
+							},
+							"description": "This field is deprecated and will be removed May 17th, 2026. Please use `cors_settings.allowed_origins` instead."
+						}
+					},
+					{
+						"name": "cors_settings",
+						"single_nested": {
+							"computed_optional_required": "computed_optional",
+							"attributes": [
+								{
+									"name": "allowed_headers",
+									"list": {
+										"computed_optional_required": "computed_optional",
+										"element_type": {
+											"string": {}
+										}
+									}
+								},
+								{
+									"name": "allowed_methods",
+									"list": {
+										"computed_optional_required": "computed_optional",
+										"element_type": {
+											"string": {}
+										},
+										"validators": [
+											{
+												"custom": {
+													"imports": [
+														{
+															"path": "github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+														}
+													],
+													"schema_definition": "listvalidator.SizeAtLeast(1)"
+												}
+											}
+										]
+									}
+								},
+								{
+									"name": "allowed_origins",
+									"list": {
+										"computed_optional_required": "computed_optional",
+										"element_type": {
+											"string": {}
+										}
+									}
+								},
+								{
+									"name": "expose_headers",
+									"list": {
+										"computed_optional_required": "computed_optional",
+										"element_type": {
+											"string": {}
+										}
+									}
+								},
+								{
+									"name": "max_age_seconds",
+									"int64": {
+										"computed_optional_required": "computed_optional",
+										"validators": [
+											{
+												"custom": {
+													"imports": [
+														{
+															"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+														}
+													],
+													"schema_definition": "int64validator.AtLeast(1)"
+												}
+											}
+										]
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "jurisdiction",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"default\",\n\"eu\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "key_name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "key_permission",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"read_write\",\n\"read_only\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								},
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "regexp"
+											},
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[a-z0-9_-]+$\"), \"\")"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "visibility",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"private\",\n\"public\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "endpoint",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "url",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "filesystem",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The filesystem identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "caches",
+			"schema": {
+				"attributes": [
+					{
+						"name": "auto_upgrade_enabled",
+						"bool": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "eviction_policy",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"allkeys-lru\",\n\"noeviction\",\n\"volatile-lru\",\n\"allkeys-random\",\n\"volatile-random\",\n\"volatile-ttl\",\n\"allkeys-lfu\",\n\"volatile-lfu\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "hibernation_timeout",
+						"string": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "is_public",
+						"bool": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								},
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "regexp"
+											},
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[a-z0-9_-]+$\"), \"\")"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "region",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"us-east-2\",\n\"us-east-1\",\n\"ca-central-1\",\n\"eu-central-1\",\n\"eu-west-1\",\n\"eu-west-2\",\n\"me-central-1\",\n\"ap-southeast-1\",\n\"ap-southeast-2\",\n\"ap-northeast-1\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "size",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"250mb\",\n\"1gb\",\n\"2.5gb\",\n\"5gb\",\n\"12gb\",\n\"50gb\",\n\"100gb\",\n\"500gb\",\n\"valkey-flex-250mb\",\n\"valkey-flex-1gb\",\n\"valkey-flex-2.5gb\",\n\"valkey-pro.250mb\",\n\"valkey-pro.1gb\",\n\"valkey-pro.2.5gb\",\n\"valkey-pro.5gb\",\n\"valkey-pro.12gb\",\n\"valkey-pro.25gb\",\n\"valkey-pro.50gb\",\n\"elasticache.cache.r7g.large\",\n\"elasticache.cache.r7g.xlarge\",\n\"elasticache.cache.r7g.2xlarge\",\n\"elasticache.cache.r7g.4xlarge\",\n\"elasticache.cache.r7g.8xlarge\",\n\"elasticache.cache.r7g.12xlarge\",\n\"elasticache.cache.r7g.16xlarge\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "type",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"laravel_valkey\",\n\"upstash_redis\",\n\"aws_elasticache_valkey\",\n\"aws_elasticache_redis\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "uses_hibernation",
+						"bool": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "connection_details",
+						"single_nested": {
+							"computed_optional_required": "computed",
+							"attributes": [
+								{
+									"name": "hostname",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "password",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "port",
+									"int64": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "protocol",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "username",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "cache",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The cache identifier"
+						}
+					}
+				]
+			}
+		},
+		{
 			"name": "commands",
 			"schema": {
 				"attributes": [
@@ -293,7 +846,7 @@
 			}
 		},
 		{
-			"name": "databases",
+			"name": "database_clusters",
 			"schema": {
 				"attributes": [
 					{
@@ -326,6 +879,19 @@
 										],
 										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
 									}
+								},
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "regexp"
+											},
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[a-z0-9_-]+$\"), \"\")"
+									}
 								}
 							]
 						}
@@ -342,7 +908,7 @@
 												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 											}
 										],
-										"schema_definition": "stringvalidator.OneOf(\n\"us-east-2\",\n\"us-east-1\",\n\"eu-central-1\",\n\"eu-west-1\",\n\"eu-west-2\",\n\"ap-southeast-1\",\n\"ap-southeast-2\",\n\"ca-central-1\",\n)"
+										"schema_definition": "stringvalidator.OneOf(\n\"us-east-2\",\n\"us-east-1\",\n\"ca-central-1\",\n\"eu-central-1\",\n\"eu-west-1\",\n\"eu-west-2\",\n\"me-central-1\",\n\"ap-southeast-1\",\n\"ap-southeast-2\",\n\"ap-northeast-1\",\n)"
 									}
 								}
 							]
@@ -360,7 +926,7 @@
 												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 											}
 										],
-										"schema_definition": "stringvalidator.OneOf(\n\"laravel_mysql_8\",\n\"aws_rds_mysql_8\",\n\"neon_serverless_postgres_18\",\n\"neon_serverless_postgres_17\",\n\"neon_serverless_postgres_16\",\n)"
+										"schema_definition": "stringvalidator.OneOf(\n\"laravel_mysql_84\",\n\"laravel_mysql_8\",\n\"aws_rds_mysql_8\",\n\"aws_rds_postgres_18\",\n\"neon_serverless_postgres_18\",\n\"neon_serverless_postgres_17\",\n\"neon_serverless_postgres_16\",\n)"
 									}
 								}
 							]
@@ -439,9 +1005,203 @@
 			}
 		},
 		{
+			"name": "database_schemas",
+			"schema": {
+				"attributes": [
+					{
+						"name": "database",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The database this resource belongs to."
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								},
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "regexp"
+											},
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[a-z0-9_-]+$\"), \"\")"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "schema",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The schema identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "database_snapshots",
+			"schema": {
+				"attributes": [
+					{
+						"name": "database",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The database this resource belongs to."
+						}
+					},
+					{
+						"name": "description",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(1, 100)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "completed_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "pitr_enabled",
+						"bool": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "pitr_ends_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "storage_bytes",
+						"int64": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "database_snapshot",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The database snapshot identifier"
+						}
+					}
+				]
+			}
+		},
+		{
 			"name": "domains",
 			"schema": {
 				"attributes": [
+					{
+						"name": "allow_downtime",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"description": "Whether to allow downtime during domain verification. When true (flexible), the domain can be pointed directly without pre-verification. When false (uninterrupted), TXT-based pre-verification is required to avoid downtime."
+						}
+					},
+					{
+						"name": "cloudflare_strategy",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"dns_proxy\",\n\"dns\",\n\"none\",\n)"
+									}
+								}
+							]
+						}
+					},
 					{
 						"name": "environment",
 						"string": {
@@ -488,7 +1248,8 @@
 					{
 						"name": "wildcard_enabled",
 						"bool": {
-							"computed_optional_required": "computed_optional"
+							"computed_optional_required": "computed_optional",
+							"description": "Whether to enable a wildcard subdomain (*.example.com) for this domain."
 						}
 					},
 					{
@@ -507,6 +1268,120 @@
 									}
 								}
 							]
+						}
+					},
+					{
+						"name": "action_required",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "dns_records",
+						"single_nested": {
+							"computed_optional_required": "computed",
+							"attributes": [
+								{
+									"name": "dcv",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "origin",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "origin_cname",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "pre_verification",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "ssl",
+									"list_nested": {
+										"computed_optional_required": "computed",
+										"nested_object": {
+											"attributes": [
+												{
+													"name": "name",
+													"string": {
+														"computed_optional_required": "computed"
+													}
+												},
+												{
+													"name": "type",
+													"string": {
+														"computed_optional_required": "computed"
+													}
+												},
+												{
+													"name": "value",
+													"string": {
+														"computed_optional_required": "computed"
+													}
+												}
+											]
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "downtime",
+						"bool": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "hostname_status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "last_verified_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "origin_status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "redirect",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "ssl_status",
+						"string": {
+							"computed_optional_required": "computed"
 						}
 					},
 					{
@@ -544,6 +1419,13 @@
 						}
 					},
 					{
+						"name": "cluster_id",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The identifier of a dedicated cluster to deploy to. Only fill it if your organization has a dedicated cluster and you want to use it for this environment."
+						}
+					},
+					{
 						"name": "name",
 						"string": {
 							"computed_optional_required": "required",
@@ -556,6 +1438,19 @@
 											}
 										],
 										"schema_definition": "stringvalidator.LengthBetween(1, 40)"
+									}
+								},
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "regexp"
+											},
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[A-Za-z0-9 _-]+$\"), \"\")"
 									}
 								}
 							]
@@ -566,200 +1461,6 @@
 						"string": {
 							"computed_optional_required": "computed_optional",
 							"description": "The environment identifier"
-						}
-					}
-				]
-			}
-		},
-		{
-			"name": "filesystem_keys",
-			"schema": {
-				"attributes": [
-					{
-						"name": "filesystem",
-						"string": {
-							"computed_optional_required": "computed_optional",
-							"description": "The filesystem this resource belongs to."
-						}
-					},
-					{
-						"name": "name",
-						"string": {
-							"computed_optional_required": "required",
-							"validators": [
-								{
-									"custom": {
-										"imports": [
-											{
-												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-											}
-										],
-										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
-									}
-								}
-							]
-						}
-					},
-					{
-						"name": "permission",
-						"string": {
-							"computed_optional_required": "required",
-							"validators": [
-								{
-									"custom": {
-										"imports": [
-											{
-												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-											}
-										],
-										"schema_definition": "stringvalidator.OneOf(\n\"read_write\",\n\"read_only\",\n)"
-									}
-								}
-							]
-						}
-					},
-					{
-						"name": "access_key_id",
-						"string": {
-							"computed_optional_required": "computed"
-						}
-					},
-					{
-						"name": "access_key_secret",
-						"string": {
-							"computed_optional_required": "computed"
-						}
-					},
-					{
-						"name": "created_at",
-						"string": {
-							"computed_optional_required": "computed"
-						}
-					},
-					{
-						"name": "id",
-						"string": {
-							"computed_optional_required": "computed"
-						}
-					},
-					{
-						"name": "filesystem_key",
-						"string": {
-							"computed_optional_required": "computed_optional",
-							"description": "The filesystem key identifier"
-						}
-					}
-				]
-			}
-		},
-		{
-			"name": "filesystems",
-			"schema": {
-				"attributes": [
-					{
-						"name": "allowed_origins",
-						"list": {
-							"computed_optional_required": "computed_optional",
-							"element_type": {
-								"string": {}
-							}
-						}
-					},
-					{
-						"name": "jurisdiction",
-						"string": {
-							"computed_optional_required": "required",
-							"validators": [
-								{
-									"custom": {
-										"imports": [
-											{
-												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-											}
-										],
-										"schema_definition": "stringvalidator.OneOf(\n\"default\",\n\"eu\",\n)"
-									}
-								}
-							]
-						}
-					},
-					{
-						"name": "key_name",
-						"string": {
-							"computed_optional_required": "required",
-							"validators": [
-								{
-									"custom": {
-										"imports": [
-											{
-												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-											}
-										],
-										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
-									}
-								}
-							]
-						}
-					},
-					{
-						"name": "key_permission",
-						"string": {
-							"computed_optional_required": "required",
-							"validators": [
-								{
-									"custom": {
-										"imports": [
-											{
-												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-											}
-										],
-										"schema_definition": "stringvalidator.OneOf(\n\"read_write\",\n\"read_only\",\n)"
-									}
-								}
-							]
-						}
-					},
-					{
-						"name": "name",
-						"string": {
-							"computed_optional_required": "required",
-							"validators": [
-								{
-									"custom": {
-										"imports": [
-											{
-												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-											}
-										],
-										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
-									}
-								}
-							]
-						}
-					},
-					{
-						"name": "visibility",
-						"string": {
-							"computed_optional_required": "required",
-							"validators": [
-								{
-									"custom": {
-										"imports": [
-											{
-												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-											}
-										],
-										"schema_definition": "stringvalidator.OneOf(\n\"private\",\n\"public\",\n)"
-									}
-								}
-							]
-						}
-					},
-					{
-						"name": "filesystem",
-						"string": {
-							"computed_optional_required": "computed_optional",
-							"description": "The filesystem identifier"
 						}
 					}
 				]
@@ -798,7 +1499,7 @@
 													"name": "connection",
 													"string": {
 														"computed_optional_required": "computed_optional",
-														"description": "The queue connection name. Only applicable for 'worker' type background processes."
+														"description": "The queue connection name. Only applicable for 'worker' type background processes. Managed queues must use 'cloud'."
 													}
 												},
 												{
@@ -896,37 +1597,15 @@
 					{
 						"name": "max_replicas",
 						"int64": {
-							"computed_optional_required": "required",
-							"validators": [
-								{
-									"custom": {
-										"imports": [
-											{
-												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-											}
-										],
-										"schema_definition": "int64validator.Between(1, 0)"
-									}
-								}
-							]
+							"computed_optional_required": "computed_optional",
+							"description": "The maximum number of replicas the instance can scale to. Only applicable to the `custom` scaling type, and rejected when used with `auto`."
 						}
 					},
 					{
 						"name": "min_replicas",
 						"int64": {
 							"computed_optional_required": "required",
-							"validators": [
-								{
-									"custom": {
-										"imports": [
-											{
-												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-											}
-										],
-										"schema_definition": "int64validator.Between(1, 0)"
-									}
-								}
-							]
+							"description": "The minimum number of replicas the instance runs. Only applicable to the `custom` scaling type, and rejected when used with `auto`. Not applicable to managed queues, which always scale to zero when idle."
 						}
 					},
 					{
@@ -942,6 +1621,25 @@
 											}
 										],
 										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "polling_interval",
+						"int64": {
+							"computed_optional_required": "required",
+							"description": "How often, in seconds (1–60), the queue is polled for new jobs. Null for non-queue instances.",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.Between(1, 60)"
 									}
 								}
 							]
@@ -1002,6 +1700,24 @@
 						}
 					},
 					{
+						"name": "shutdown_timeout",
+						"int64": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.Between(1, 0)"
+									}
+								}
+							]
+						}
+					},
+					{
 						"name": "size",
 						"string": {
 							"computed_optional_required": "required",
@@ -1013,7 +1729,255 @@
 												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 											}
 										],
-										"schema_definition": "stringvalidator.OneOf(\n\"flex.c-1vcpu-256mb\",\n\"flex.g-1vcpu-512mb\",\n\"flex.m-1vcpu-1gb\",\n\"flex.c-2vcpu-512mb\",\n\"flex.g-2vcpu-1gb\",\n\"flex.m-2vcpu-2gb\",\n\"flex.c-4vcpu-1gb\",\n\"flex.g-4vcpu-2gb\",\n\"flex.m-4vcpu-4gb\",\n\"flex.c-8vcpu-2gb\",\n\"flex.g-8vcpu-4gb\",\n\"flex.m-8vcpu-8gb\",\n\"pro.c-1vcpu-1gb\",\n\"pro.g-1vcpu-2gb\",\n\"pro.m-1vcpu-4gb\",\n\"pro.c-2vcpu-2gb\",\n\"pro.g-2vcpu-4gb\",\n\"pro.m-2vcpu-8gb\",\n\"pro.c-4vcpu-4gb\",\n\"pro.g-4vcpu-8gb\",\n\"pro.m-4vcpu-16gb\",\n\"pro.c-8vcpu-8gb\",\n\"pro.g-8vcpu-16gb\",\n\"pro.m-8vcpu-32gb\",\n\"dedicated.c-1vcpu-2gb\",\n\"dedicated.g-1vcpu-4gb\",\n\"dedicated.m-1vcpu-8gb\",\n\"dedicated.c-2vcpu-4gb\",\n\"dedicated.g-2vcpu-8gb\",\n\"dedicated.m-2vcpu-16gb\",\n\"dedicated.c-4vcpu-8gb\",\n\"dedicated.g-4vcpu-16gb\",\n\"dedicated.m-4vcpu-32gb\",\n\"dedicated.c-8vcpu-16gb\",\n\"dedicated.g-8vcpu-32gb\",\n\"dedicated.m-8vcpu-64gb\",\n)"
+										"schema_definition": "stringvalidator.OneOf(\n\"flex-512mb\",\n\"flex-1gb\",\n\"flex-2gb\",\n\"flex.c-1vcpu-256mb\",\n\"flex.g-1vcpu-512mb\",\n\"flex.m-1vcpu-1gb\",\n\"flex.c-2vcpu-512mb\",\n\"flex.g-2vcpu-1gb\",\n\"flex.m-2vcpu-2gb\",\n\"flex.c-4vcpu-1gb\",\n\"flex.g-4vcpu-2gb\",\n\"flex.m-4vcpu-4gb\",\n\"flex.c-8vcpu-2gb\",\n\"flex.g-8vcpu-4gb\",\n\"flex.m-8vcpu-8gb\",\n\"pro.c-1vcpu-1gb\",\n\"pro.g-1vcpu-2gb\",\n\"pro.m-1vcpu-4gb\",\n\"pro.c-2vcpu-2gb\",\n\"pro.g-2vcpu-4gb\",\n\"pro.m-2vcpu-8gb\",\n\"pro.c-4vcpu-4gb\",\n\"pro.g-4vcpu-8gb\",\n\"pro.m-4vcpu-16gb\",\n\"pro.c-8vcpu-8gb\",\n\"pro.g-8vcpu-16gb\",\n\"pro.m-8vcpu-32gb\",\n\"dedicated.c-1vcpu-2gb\",\n\"dedicated.g-1vcpu-4gb\",\n\"dedicated.m-1vcpu-8gb\",\n\"dedicated.c-2vcpu-4gb\",\n\"dedicated.g-2vcpu-8gb\",\n\"dedicated.m-2vcpu-16gb\",\n\"dedicated.c-4vcpu-8gb\",\n\"dedicated.g-4vcpu-16gb\",\n\"dedicated.m-4vcpu-32gb\",\n\"dedicated.c-8vcpu-16gb\",\n\"dedicated.g-8vcpu-32gb\",\n\"dedicated.m-8vcpu-64gb\",\n\"mq-pro-256mb\",\n\"mq-pro-512mb\",\n\"mq-pro-1gb\",\n\"mq-pro-2gb\",\n\"mq-pro-4gb\",\n\"mq-pro-8gb\",\n\"mq-dedicated-256mb\",\n\"mq-dedicated-512mb\",\n\"mq-dedicated-1gb\",\n\"mq-dedicated-2gb\",\n\"mq-dedicated-4gb\",\n\"mq-dedicated-8gb\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "sleep_with_app",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"description": "Whether worker replicas scale to zero alongside the app cluster, waking when they receive traffic. Only applicable to worker (service) instances."
+						}
+					},
+					{
+						"name": "type",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"service\",\n\"managed_queue\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "uses_scheduler",
+						"bool": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "visibility_timeout",
+						"int64": {
+							"computed_optional_required": "required",
+							"description": "How long, in seconds (0–43200), a received job stays hidden from other workers before it becomes available again. Null for non-queue instances.",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.Between(0, 43200)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "is_default",
+						"bool": {
+							"computed_optional_required": "computed",
+							"description": "Whether this is the environment's default managed queue. Null for non-queue instances."
+						}
+					},
+					{
+						"name": "paused",
+						"bool": {
+							"computed_optional_required": "computed",
+							"description": "Whether the managed queue is currently paused. Null for non-queue instances."
+						}
+					},
+					{
+						"name": "queue_status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "instance",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The instance identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "websocket_applications",
+			"schema": {
+				"attributes": [
+					{
+						"name": "activity_timeout",
+						"int64": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.Between(1, 60)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "allowed_origins",
+						"list": {
+							"computed_optional_required": "computed_optional",
+							"element_type": {
+								"string": {}
+							}
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								},
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "regexp"
+											},
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[a-z0-9_-]+$\"), \"\")"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "ping_interval",
+						"int64": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.Between(1, 60)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "websocket_server",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The websocketServer this resource belongs to."
+						}
+					},
+					{
+						"name": "websocket_application",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The websocket application identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "websocket_clusters",
+			"schema": {
+				"attributes": [
+					{
+						"name": "max_connections",
+						"int64": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								},
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "regexp"
+											},
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.RegexMatches(regexp.MustCompile(\"^[a-z0-9_-]+$\"), \"\")"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "region",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"us-east-2\",\n\"us-east-1\",\n\"ca-central-1\",\n\"eu-central-1\",\n\"eu-west-1\",\n\"eu-west-2\",\n\"me-central-1\",\n\"ap-southeast-1\",\n\"ap-southeast-2\",\n\"ap-northeast-1\",\n)"
 									}
 								}
 							]
@@ -1031,20 +1995,26 @@
 												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 											}
 										],
-										"schema_definition": "stringvalidator.OneOf(\n\"service\",\n)"
+										"schema_definition": "stringvalidator.OneOf(\n\"reverb\",\n)"
 									}
 								}
 							]
 						}
 					},
 					{
-						"name": "uses_scheduler",
-						"bool": {
-							"computed_optional_required": "computed_optional"
+						"name": "connection_distribution_strategy",
+						"string": {
+							"computed_optional_required": "computed"
 						}
 					},
 					{
 						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "hostname",
 						"string": {
 							"computed_optional_required": "computed"
 						}
@@ -1056,10 +2026,16 @@
 						}
 					},
 					{
-						"name": "instance",
+						"name": "status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "websocket_server",
 						"string": {
 							"computed_optional_required": "computed_optional",
-							"description": "The instance identifier"
+							"description": "The websocket server identifier"
 						}
 					}
 				]
