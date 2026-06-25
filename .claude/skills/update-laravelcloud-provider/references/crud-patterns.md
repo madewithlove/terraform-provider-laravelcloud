@@ -7,10 +7,12 @@ matches the resource's traits rather than starting blank:
   (no parent), sync create, no delete endpoint (Delete is a no-op).
 - `internal/provider/resource_environments/environments_resource.go` — a child
   resource (parent `application`), full CRUD.
-- `internal/provider/resource_filesystem_keys/filesystem_keys_resource.go` —
-  child resource, sensitive field (`access_key_secret`).
-- `internal/provider/resource_databases/databases_resource.go` — `config` as a
-  generic `map(string)`, a computed nested block left null.
+- `internal/provider/resource_bucket_keys/bucket_keys_resource.go` — child
+  resource, sensitive field (`access_key_secret`).
+- `internal/provider/resource_database_clusters/database_clusters_resource.go` —
+  `config` as a generic `map(string)`, a computed nested block left null.
+- `internal/provider/resource_database_schemas/database_schemas_resource.go` — a
+  two-level child (item path needs both the cluster and the schema id).
 - `internal/provider/resource_background_processes/background_processes_resource.go`
   — a nested object input (`config`) serialized via `providerutil.AttrToAny`.
 - `internal/provider/resource_deployments/deployments_resource.go` — fully
