@@ -1,0 +1,128 @@
+provider:
+  name: laravelcloud
+
+resources:
+  applications:
+    create:
+      path: /applications
+      method: POST
+    read:
+      path: /applications/{application}
+      method: GET
+    update:
+      path: /applications/{application}
+      method: PATCH
+
+  environments:
+    create:
+      path: /applications/{application}/environments
+      method: POST
+    read:
+      path: /environments/{environment}
+      method: GET
+    update:
+      path: /environments/{environment}
+      method: PATCH
+    delete:
+      path: /environments/{environment}
+      method: DELETE
+
+  instances:
+    create:
+      path: /environments/{environment}/instances
+      method: POST
+    read:
+      path: /instances/{instance}
+      method: GET
+    update:
+      path: /instances/{instance}
+      method: PATCH
+    delete:
+      path: /instances/{instance}
+      method: DELETE
+
+  background_processes:
+    create:
+      path: /instances/{instance}/background-processes
+      method: POST
+    read:
+      path: /background-processes/{backgroundProcess}
+      method: GET
+    update:
+      path: /background-processes/{backgroundProcess}
+      method: PATCH
+    delete:
+      path: /background-processes/{backgroundProcess}
+      method: DELETE
+
+  databases:
+    create:
+      path: /databases
+      method: POST
+    read:
+      path: /databases/{database}
+      method: GET
+    update:
+      path: /databases/{database}
+      method: PATCH
+    delete:
+      path: /databases/{database}
+      method: DELETE
+
+  domains:
+    create:
+      path: /environments/{environment}/domains
+      method: POST
+    read:
+      path: /domains/{domain}
+      method: GET
+    update:
+      path: /domains/{domain}
+      method: PATCH
+    delete:
+      path: /domains/{domain}
+      method: DELETE
+
+  filesystems:
+    create:
+      path: /filesystems
+      method: POST
+    read:
+      path: /filesystems/{filesystem}
+      method: GET
+    update:
+      path: /filesystems/{filesystem}
+      method: PATCH
+    delete:
+      path: /filesystems/{filesystem}
+      method: DELETE
+
+  filesystem_keys:
+    create:
+      path: /filesystems/{filesystem}/keys
+      method: POST
+    read:
+      path: /filesystem-keys/{filesystemKey}
+      method: GET
+    update:
+      path: /filesystem-keys/{filesystemKey}
+      method: PATCH
+    delete:
+      path: /filesystem-keys/{filesystemKey}
+      method: DELETE
+
+  deployments:
+    create:
+      path: /environments/{environment}/deployments
+      method: POST
+    read:
+      path: /deployments/{deployment}
+      method: GET
+
+  commands:
+    create:
+      path: /environments/{environment}/commands
+      method: POST
+    read:
+      path: /commands/{command}
+      method: GET

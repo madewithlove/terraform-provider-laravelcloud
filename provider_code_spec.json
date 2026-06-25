@@ -1,0 +1,1070 @@
+{
+	"provider": {
+		"name": "laravelcloud"
+	},
+	"resources": [
+		{
+			"name": "applications",
+			"schema": {
+				"attributes": [
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "region",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"us-east-2\",\n\"us-east-1\",\n\"eu-central-1\",\n\"eu-west-1\",\n\"eu-west-2\",\n\"ap-southeast-1\",\n\"ap-southeast-2\",\n\"ca-central-1\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "repository",
+						"string": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "slack_channel",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "slug",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "application",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The application identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "background_processes",
+			"schema": {
+				"attributes": [
+					{
+						"name": "command",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "Custom command to run. Required when type is 'custom'. Not applicable for 'worker' type."
+						}
+					},
+					{
+						"name": "config",
+						"single_nested": {
+							"computed_optional_required": "computed_optional",
+							"attributes": [
+								{
+									"name": "backoff",
+									"int64": {
+										"computed_optional_required": "computed_optional",
+										"description": "Number of seconds to wait before retrying a failed job. Only applicable for 'worker' type background processes."
+									}
+								},
+								{
+									"name": "connection",
+									"string": {
+										"computed_optional_required": "computed_optional",
+										"description": "The queue connection name. Only applicable for 'worker' type background processes."
+									}
+								},
+								{
+									"name": "force",
+									"bool": {
+										"computed_optional_required": "computed_optional",
+										"description": "Force the worker to run even in maintenance mode. Only applicable for 'worker' type background processes."
+									}
+								},
+								{
+									"name": "queue",
+									"string": {
+										"computed_optional_required": "computed_optional",
+										"description": "The queue name(s) to process. Can be comma-separated for multiple queues. Only applicable for 'worker' type background processes."
+									}
+								},
+								{
+									"name": "rest",
+									"int64": {
+										"computed_optional_required": "computed_optional",
+										"description": "Number of seconds to rest between jobs. Only applicable for 'worker' type background processes."
+									}
+								},
+								{
+									"name": "sleep",
+									"int64": {
+										"computed_optional_required": "computed_optional",
+										"description": "Number of seconds to sleep when no jobs are available. Only applicable for 'worker' type background processes."
+									}
+								},
+								{
+									"name": "timeout",
+									"int64": {
+										"computed_optional_required": "computed_optional",
+										"description": "Number of seconds a job can run before timing out. Only applicable for 'worker' type background processes."
+									}
+								},
+								{
+									"name": "tries",
+									"int64": {
+										"computed_optional_required": "computed_optional",
+										"description": "Number of times a job should be attempted. Only applicable for 'worker' type background processes."
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "instance",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The instance this resource belongs to."
+						}
+					},
+					{
+						"name": "processes",
+						"int64": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.Between(1, 10)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "type",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"worker\",\n\"custom\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "background_process",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The background process identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "commands",
+			"schema": {
+				"attributes": [
+					{
+						"name": "command",
+						"string": {
+							"computed_optional_required": "required",
+							"description": "The command identifier",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(1, 150000)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "environment",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The environment this resource belongs to."
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "exit_code",
+						"int64": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "failure_reason",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "finished_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "output",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "started_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "databases",
+			"schema": {
+				"attributes": [
+					{
+						"name": "cluster_id",
+						"int64": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "config",
+						"map": {
+							"computed_optional_required": "required",
+							"element_type": {
+								"string": {}
+							},
+							"description": "Configuration object. Fields vary based on database type."
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "region",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"us-east-2\",\n\"us-east-1\",\n\"eu-central-1\",\n\"eu-west-1\",\n\"eu-west-2\",\n\"ap-southeast-1\",\n\"ap-southeast-2\",\n\"ca-central-1\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "type",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"laravel_mysql_8\",\n\"aws_rds_mysql_8\",\n\"neon_serverless_postgres_18\",\n\"neon_serverless_postgres_17\",\n\"neon_serverless_postgres_16\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "connection_details",
+						"single_nested": {
+							"computed_optional_required": "computed",
+							"attributes": [
+								{
+									"name": "driver",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "hostname",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "password",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "port",
+									"int64": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "protocol",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								},
+								{
+									"name": "username",
+									"string": {
+										"computed_optional_required": "computed"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "status",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "database",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The database identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "domains",
+			"schema": {
+				"attributes": [
+					{
+						"name": "environment",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The environment this resource belongs to."
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 255)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "verification_method",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"pre_verification\",\n\"real_time\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "wildcard_enabled",
+						"bool": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "www_redirect",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"root_to_www\",\n\"www_to_root\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "domain",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The domain identifier"
+						}
+					},
+					{
+						"name": "verify",
+						"bool": {
+							"computed_optional_required": "computed_optional",
+							"description": "Whether the domain's DNS records should be verified and validated."
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "environments",
+			"schema": {
+				"attributes": [
+					{
+						"name": "application",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The application this resource belongs to."
+						}
+					},
+					{
+						"name": "branch",
+						"string": {
+							"computed_optional_required": "required"
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(1, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "environment",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The environment identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "filesystem_keys",
+			"schema": {
+				"attributes": [
+					{
+						"name": "filesystem",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The filesystem this resource belongs to."
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "permission",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"read_write\",\n\"read_only\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "access_key_id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "access_key_secret",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "filesystem_key",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The filesystem key identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "filesystems",
+			"schema": {
+				"attributes": [
+					{
+						"name": "allowed_origins",
+						"list": {
+							"computed_optional_required": "computed_optional",
+							"element_type": {
+								"string": {}
+							}
+						}
+					},
+					{
+						"name": "jurisdiction",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"default\",\n\"eu\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "key_name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "key_permission",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"read_write\",\n\"read_only\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "visibility",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"private\",\n\"public\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "filesystem",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The filesystem identifier"
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "instances",
+			"schema": {
+				"attributes": [
+					{
+						"name": "background_processes",
+						"list_nested": {
+							"computed_optional_required": "computed_optional",
+							"nested_object": {
+								"attributes": [
+									{
+										"name": "command",
+										"string": {
+											"computed_optional_required": "computed_optional",
+											"description": "Custom command to run. Required when type is 'custom'. Not applicable for 'worker' type."
+										}
+									},
+									{
+										"name": "config",
+										"single_nested": {
+											"computed_optional_required": "computed_optional",
+											"attributes": [
+												{
+													"name": "backoff",
+													"int64": {
+														"computed_optional_required": "computed_optional",
+														"description": "Number of seconds to wait before retrying a failed job. Only applicable for 'worker' type background processes."
+													}
+												},
+												{
+													"name": "connection",
+													"string": {
+														"computed_optional_required": "computed_optional",
+														"description": "The queue connection name. Only applicable for 'worker' type background processes."
+													}
+												},
+												{
+													"name": "force",
+													"bool": {
+														"computed_optional_required": "computed_optional",
+														"description": "Force the worker to run even in maintenance mode. Only applicable for 'worker' type background processes."
+													}
+												},
+												{
+													"name": "queue",
+													"string": {
+														"computed_optional_required": "computed_optional",
+														"description": "The queue name(s) to process. Can be comma-separated for multiple queues. Only applicable for 'worker' type background processes."
+													}
+												},
+												{
+													"name": "rest",
+													"int64": {
+														"computed_optional_required": "computed_optional",
+														"description": "Number of seconds to rest between jobs. Only applicable for 'worker' type background processes."
+													}
+												},
+												{
+													"name": "sleep",
+													"int64": {
+														"computed_optional_required": "computed_optional",
+														"description": "Number of seconds to sleep when no jobs are available. Only applicable for 'worker' type background processes."
+													}
+												},
+												{
+													"name": "timeout",
+													"int64": {
+														"computed_optional_required": "computed_optional",
+														"description": "Number of seconds a job can run before timing out. Only applicable for 'worker' type background processes."
+													}
+												},
+												{
+													"name": "tries",
+													"int64": {
+														"computed_optional_required": "computed_optional",
+														"description": "Number of times a job should be attempted. Only applicable for 'worker' type background processes."
+													}
+												}
+											]
+										}
+									},
+									{
+										"name": "processes",
+										"int64": {
+											"computed_optional_required": "required",
+											"validators": [
+												{
+													"custom": {
+														"imports": [
+															{
+																"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+															}
+														],
+														"schema_definition": "int64validator.Between(1, 10)"
+													}
+												}
+											]
+										}
+									},
+									{
+										"name": "type",
+										"string": {
+											"computed_optional_required": "required",
+											"validators": [
+												{
+													"custom": {
+														"imports": [
+															{
+																"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+															}
+														],
+														"schema_definition": "stringvalidator.OneOf(\n\"worker\",\n\"custom\",\n)"
+													}
+												}
+											]
+										}
+									}
+								]
+							}
+						}
+					},
+					{
+						"name": "environment",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The environment this resource belongs to."
+						}
+					},
+					{
+						"name": "max_replicas",
+						"int64": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.Between(1, 0)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "min_replicas",
+						"int64": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.Between(1, 0)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "name",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.LengthBetween(3, 40)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "scaling_cpu_threshold_percentage",
+						"int64": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.Between(50, 95)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "scaling_memory_threshold_percentage",
+						"int64": {
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.Between(50, 95)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "scaling_type",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"none\",\n\"custom\",\n\"auto\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "size",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"flex.c-1vcpu-256mb\",\n\"flex.g-1vcpu-512mb\",\n\"flex.m-1vcpu-1gb\",\n\"flex.c-2vcpu-512mb\",\n\"flex.g-2vcpu-1gb\",\n\"flex.m-2vcpu-2gb\",\n\"flex.c-4vcpu-1gb\",\n\"flex.g-4vcpu-2gb\",\n\"flex.m-4vcpu-4gb\",\n\"flex.c-8vcpu-2gb\",\n\"flex.g-8vcpu-4gb\",\n\"flex.m-8vcpu-8gb\",\n\"pro.c-1vcpu-1gb\",\n\"pro.g-1vcpu-2gb\",\n\"pro.m-1vcpu-4gb\",\n\"pro.c-2vcpu-2gb\",\n\"pro.g-2vcpu-4gb\",\n\"pro.m-2vcpu-8gb\",\n\"pro.c-4vcpu-4gb\",\n\"pro.g-4vcpu-8gb\",\n\"pro.m-4vcpu-16gb\",\n\"pro.c-8vcpu-8gb\",\n\"pro.g-8vcpu-16gb\",\n\"pro.m-8vcpu-32gb\",\n\"dedicated.c-1vcpu-2gb\",\n\"dedicated.g-1vcpu-4gb\",\n\"dedicated.m-1vcpu-8gb\",\n\"dedicated.c-2vcpu-4gb\",\n\"dedicated.g-2vcpu-8gb\",\n\"dedicated.m-2vcpu-16gb\",\n\"dedicated.c-4vcpu-8gb\",\n\"dedicated.g-4vcpu-16gb\",\n\"dedicated.m-4vcpu-32gb\",\n\"dedicated.c-8vcpu-16gb\",\n\"dedicated.g-8vcpu-32gb\",\n\"dedicated.m-8vcpu-64gb\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "type",
+						"string": {
+							"computed_optional_required": "required",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+											}
+										],
+										"schema_definition": "stringvalidator.OneOf(\n\"service\",\n)"
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "uses_scheduler",
+						"bool": {
+							"computed_optional_required": "computed_optional"
+						}
+					},
+					{
+						"name": "created_at",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "id",
+						"string": {
+							"computed_optional_required": "computed"
+						}
+					},
+					{
+						"name": "instance",
+						"string": {
+							"computed_optional_required": "computed_optional",
+							"description": "The instance identifier"
+						}
+					}
+				]
+			}
+		}
+	],
+	"version": "0.1"
+}
