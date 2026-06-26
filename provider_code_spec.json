@@ -1473,74 +1473,74 @@
 					{
 						"name": "background_processes",
 						"list_nested": {
-							"computed_optional_required": "computed_optional",
+							"computed_optional_required": "optional",
 							"nested_object": {
 								"attributes": [
 									{
 										"name": "command",
 										"string": {
-											"computed_optional_required": "computed_optional",
+											"computed_optional_required": "optional",
 											"description": "Custom command to run. Required when type is 'custom'. Not applicable for 'worker' type."
 										}
 									},
 									{
 										"name": "config",
 										"single_nested": {
-											"computed_optional_required": "computed_optional",
+											"computed_optional_required": "optional",
 											"attributes": [
 												{
 													"name": "backoff",
 													"int64": {
-														"computed_optional_required": "computed_optional",
+														"computed_optional_required": "optional",
 														"description": "Number of seconds to wait before retrying a failed job. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "connection",
 													"string": {
-														"computed_optional_required": "computed_optional",
+														"computed_optional_required": "optional",
 														"description": "The queue connection name. Only applicable for 'worker' type background processes. Managed queues must use 'cloud'."
 													}
 												},
 												{
 													"name": "force",
 													"bool": {
-														"computed_optional_required": "computed_optional",
+														"computed_optional_required": "optional",
 														"description": "Force the worker to run even in maintenance mode. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "queue",
 													"string": {
-														"computed_optional_required": "computed_optional",
+														"computed_optional_required": "optional",
 														"description": "The queue name(s) to process. Can be comma-separated for multiple queues. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "rest",
 													"int64": {
-														"computed_optional_required": "computed_optional",
+														"computed_optional_required": "optional",
 														"description": "Number of seconds to rest between jobs. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "sleep",
 													"int64": {
-														"computed_optional_required": "computed_optional",
+														"computed_optional_required": "optional",
 														"description": "Number of seconds to sleep when no jobs are available. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "timeout",
 													"int64": {
-														"computed_optional_required": "computed_optional",
+														"computed_optional_required": "optional",
 														"description": "Number of seconds a job can run before timing out. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "tries",
 													"int64": {
-														"computed_optional_required": "computed_optional",
+														"computed_optional_required": "optional",
 														"description": "Number of times a job should be attempted. Only applicable for 'worker' type background processes."
 													}
 												}
@@ -1711,7 +1711,7 @@
 												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 											}
 										],
-										"schema_definition": "int64validator.Between(1, 0)"
+										"schema_definition": "int64validator.AtLeast(1)"
 									}
 								}
 							]
