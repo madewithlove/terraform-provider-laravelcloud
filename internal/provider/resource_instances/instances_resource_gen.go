@@ -197,7 +197,7 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 			"shutdown_timeout": schema.Int64Attribute{
 				Required: true,
 				Validators: []validator.Int64{
-					int64validator.Between(1, 0),
+					int64validator.AtLeast(1),
 				},
 			},
 			"size": schema.StringAttribute{
