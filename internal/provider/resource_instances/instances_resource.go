@@ -5,7 +5,9 @@ package resource_instances
 
 import (
 	"context"
+
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -64,18 +66,11 @@ func (r *instancesResource) Create(ctx context.Context, req resource.CreateReque
 		"type":         plan.Type.ValueString(),
 		"size":         plan.Size.ValueString(),
 		"scaling_type": plan.ScalingType.ValueString(),
-		"max_replicas": plan.MaxReplicas.ValueInt64(),
-		"min_replicas": plan.MinReplicas.ValueInt64(),
 	}
-	if !plan.ScalingCpuThresholdPercentage.IsNull() && !plan.ScalingCpuThresholdPercentage.IsUnknown() {
-		body["scaling_cpu_threshold_percentage"] = plan.ScalingCpuThresholdPercentage.ValueInt64()
-	}
-	if !plan.ScalingMemoryThresholdPercentage.IsNull() && !plan.ScalingMemoryThresholdPercentage.IsUnknown() {
-		body["scaling_memory_threshold_percentage"] = plan.ScalingMemoryThresholdPercentage.ValueInt64()
-	}
-	if !plan.UsesScheduler.IsNull() && !plan.UsesScheduler.IsUnknown() {
-		body["uses_scheduler"] = plan.UsesScheduler.ValueBool()
-	}
+	setOptional(body, &plan,
+		"max_replicas", "min_replicas", "uses_scheduler", "sleep_with_app",
+		"scaling_cpu_threshold_percentage", "scaling_memory_threshold_percentage",
+		"visibility_timeout", "polling_interval", "shutdown_timeout")
 	if bp := providerutil.AttrToAny(plan.BackgroundProcesses); bp != nil {
 		body["background_processes"] = bp
 	}
@@ -124,18 +119,11 @@ func (r *instancesResource) Update(ctx context.Context, req resource.UpdateReque
 		"name":         plan.Name.ValueString(),
 		"size":         plan.Size.ValueString(),
 		"scaling_type": plan.ScalingType.ValueString(),
-		"max_replicas": plan.MaxReplicas.ValueInt64(),
-		"min_replicas": plan.MinReplicas.ValueInt64(),
 	}
-	if !plan.ScalingCpuThresholdPercentage.IsNull() && !plan.ScalingCpuThresholdPercentage.IsUnknown() {
-		body["scaling_cpu_threshold_percentage"] = plan.ScalingCpuThresholdPercentage.ValueInt64()
-	}
-	if !plan.ScalingMemoryThresholdPercentage.IsNull() && !plan.ScalingMemoryThresholdPercentage.IsUnknown() {
-		body["scaling_memory_threshold_percentage"] = plan.ScalingMemoryThresholdPercentage.ValueInt64()
-	}
-	if !plan.UsesScheduler.IsNull() && !plan.UsesScheduler.IsUnknown() {
-		body["uses_scheduler"] = plan.UsesScheduler.ValueBool()
-	}
+	setOptional(body, &plan,
+		"max_replicas", "min_replicas", "uses_scheduler", "sleep_with_app",
+		"scaling_cpu_threshold_percentage", "scaling_memory_threshold_percentage",
+		"visibility_timeout", "polling_interval", "shutdown_timeout")
 
 	endpoint := fmt.Sprintf("/instances/%s", plan.Instance.ValueString())
 	if err := r.client.Do(ctx, http.MethodPatch, endpoint, body, nil); err != nil {
@@ -177,9 +165,31 @@ func (r *instancesResource) ImportState(ctx context.Context, req resource.Import
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("instance"), parts[1])...)
 }
 
+// setOptional adds the named optional attributes to a request body when the
+// plan has a known, non-null value for them.
+func setOptional(body map[string]any, plan *InstancesModel, names ...string) {
+	values := map[string]attr.Value{
+		"max_replicas":                        plan.MaxReplicas,
+		"min_replicas":                        plan.MinReplicas,
+		"uses_scheduler":                      plan.UsesScheduler,
+		"sleep_with_app":                      plan.SleepWithApp,
+		"scaling_cpu_threshold_percentage":    plan.ScalingCpuThresholdPercentage,
+		"scaling_memory_threshold_percentage": plan.ScalingMemoryThresholdPercentage,
+		"visibility_timeout":                  plan.VisibilityTimeout,
+		"polling_interval":                    plan.PollingInterval,
+		"shutdown_timeout":                    plan.ShutdownTimeout,
+	}
+	for _, name := range names {
+		if v := providerutil.AttrToAny(values[name]); v != nil {
+			body[name] = v
+		}
+	}
+}
+
 // instanceData is the JSON:API representation of an instance. The nested
 // background_processes block is preserved from configuration rather than mapped
-// back from the response.
+// back from the response; manage existing processes with the
+// background_processes resource instead.
 type instanceData struct {
 	ID         string `json:"id"`
 	Attributes struct {
@@ -189,49 +199,46 @@ type instanceData struct {
 		ScalingType                      string  `json:"scaling_type"`
 		MaxReplicas                      *int64  `json:"max_replicas"`
 		MinReplicas                      *int64  `json:"min_replicas"`
+		QueueStatus                      *string `json:"queue_status"`
+		Paused                           *bool   `json:"paused"`
+		IsDefault                        *bool   `json:"is_default"`
+		VisibilityTimeout                *int64  `json:"visibility_timeout"`
+		PollingInterval                  *int64  `json:"polling_interval"`
+		ShutdownTimeout                  *int64  `json:"shutdown_timeout"`
+		UsesScheduler                    *bool   `json:"uses_scheduler"`
+		SleepWithApp                     *bool   `json:"sleep_with_app"`
 		ScalingCpuThresholdPercentage    *int64  `json:"scaling_cpu_threshold_percentage"`
 		ScalingMemoryThresholdPercentage *int64  `json:"scaling_memory_threshold_percentage"`
-		UsesScheduler                    *bool   `json:"uses_scheduler"`
 		CreatedAt                        *string `json:"created_at"`
 	} `json:"attributes"`
 }
 
 func (d *instanceData) apply(m *InstancesModel) {
+	a := d.Attributes
 	m.Id = types.StringValue(d.ID)
 	m.Instance = types.StringValue(d.ID)
-	m.Name = types.StringValue(d.Attributes.Name)
-	m.Type = types.StringValue(d.Attributes.Type)
-	m.Size = types.StringValue(d.Attributes.Size)
-	m.ScalingType = types.StringValue(d.Attributes.ScalingType)
-	m.MaxReplicas = optionalInt64(d.Attributes.MaxReplicas)
-	m.MinReplicas = optionalInt64(d.Attributes.MinReplicas)
-	m.ScalingCpuThresholdPercentage = optionalInt64(d.Attributes.ScalingCpuThresholdPercentage)
-	m.ScalingMemoryThresholdPercentage = optionalInt64(d.Attributes.ScalingMemoryThresholdPercentage)
-	m.CreatedAt = optionalString(d.Attributes.CreatedAt)
-	if d.Attributes.UsesScheduler != nil {
-		m.UsesScheduler = types.BoolValue(*d.Attributes.UsesScheduler)
-	} else if m.UsesScheduler.IsUnknown() {
-		m.UsesScheduler = types.BoolNull()
-	}
+	m.Name = types.StringValue(a.Name)
+	m.Type = types.StringValue(a.Type)
+	m.Size = types.StringValue(a.Size)
+	m.ScalingType = types.StringValue(a.ScalingType)
+	m.MaxReplicas = providerutil.OptionalInt64(a.MaxReplicas)
+	m.MinReplicas = providerutil.OptionalInt64(a.MinReplicas)
+	m.QueueStatus = providerutil.OptionalString(a.QueueStatus)
+	m.Paused = providerutil.OptionalBool(a.Paused)
+	m.IsDefault = providerutil.OptionalBool(a.IsDefault)
+	m.VisibilityTimeout = providerutil.OptionalInt64(a.VisibilityTimeout)
+	m.PollingInterval = providerutil.OptionalInt64(a.PollingInterval)
+	m.ShutdownTimeout = providerutil.OptionalInt64(a.ShutdownTimeout)
+	m.UsesScheduler = providerutil.OptionalBool(a.UsesScheduler)
+	m.SleepWithApp = providerutil.OptionalBool(a.SleepWithApp)
+	m.ScalingCpuThresholdPercentage = providerutil.OptionalInt64(a.ScalingCpuThresholdPercentage)
+	m.ScalingMemoryThresholdPercentage = providerutil.OptionalInt64(a.ScalingMemoryThresholdPercentage)
+	m.CreatedAt = providerutil.OptionalString(a.CreatedAt)
 
-	// background_processes is configuration-driven and not reliably echoed by
-	// the API; keep whatever the plan/state already holds. If it was left
-	// unknown (e.g. a fresh import), normalize it to null.
+	// background_processes is a create-time input that the API does not echo;
+	// keep whatever the plan/state holds, and normalize unknown (e.g. a fresh
+	// import) to null.
 	if m.BackgroundProcesses.IsUnknown() {
 		m.BackgroundProcesses = types.ListNull(BackgroundProcessesValue{}.Type(context.Background()))
 	}
-}
-
-func optionalInt64(i *int64) types.Int64 {
-	if i == nil {
-		return types.Int64Null()
-	}
-	return types.Int64Value(*i)
-}
-
-func optionalString(s *string) types.String {
-	if s == nil {
-		return types.StringNull()
-	}
-	return types.StringValue(*s)
 }
