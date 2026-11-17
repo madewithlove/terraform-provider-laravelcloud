@@ -32,6 +32,11 @@ type fakeAPI struct {
 
 	mu       sync.Mutex
 	requests []string
+
+	// variables holds each environment's variables once they are read or
+	// changed, seeded from the recorded environment. Unlike the rest of the
+	// fake API they can be changed; see fake_environment_variables_test.go.
+	variables map[string][]fakeVariable
 }
 
 func newFakeAPI(t *testing.T) *fakeAPI {
@@ -47,20 +52,24 @@ func (a *fakeAPI) serve(w http.ResponseWriter, r *http.Request) {
 	a.requests = append(a.requests, r.Method+" "+r.URL.RequestURI())
 	a.mu.Unlock()
 
-	if r.Method != http.MethodGet {
-		http.Error(w, `{"message":"the fake API is read-only"}`, http.StatusMethodNotAllowed)
-		return
-	}
 	if r.Header.Get("Authorization") != "Bearer test-token" {
 		http.Error(w, `{"message":"Unauthenticated."}`, http.StatusUnauthorized)
 		return
 	}
+	if a.serveEnvironmentVariables(w, r) {
+		return
+	}
+	if r.Method != http.MethodGet {
+		http.Error(w, `{"message":"the fake API is read-only"}`, http.StatusMethodNotAllowed)
+		return
+	}
 
-	payload, err := os.ReadFile(filepath.Join("testdata", "api", filepath.FromSlash(strings.TrimPrefix(r.URL.Path, "/"))+".json"))
+	payload, err := readRecording(r.URL.Path)
 	if err != nil {
 		http.Error(w, `{"message":"Not found."}`, http.StatusNotFound)
 		return
 	}
+	payload = a.withEnvironmentVariables(r.URL.Path, payload)
 
 	// Like the real API, only sideload related resources when asked to.
 	if r.URL.Query().Get("include") == "" {
@@ -73,6 +82,11 @@ func (a *fakeAPI) serve(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(payload)
+}
+
+// readRecording returns the recorded response for a request path.
+func readRecording(requestPath string) ([]byte, error) {
+	return os.ReadFile(filepath.Join("testdata", "api", filepath.FromSlash(strings.TrimPrefix(requestPath, "/"))+".json"))
 }
 
 func (a *fakeAPI) requested(request string) bool {
