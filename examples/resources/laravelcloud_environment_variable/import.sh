@@ -1,0 +1,1 @@
+terraform import laravelcloud_environment_variable.example environment-id/CRM_WEBSITE_TOKEN

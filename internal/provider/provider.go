@@ -22,6 +22,7 @@ import (
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_database_snapshots"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_deployments"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_domains"
+	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_environment_variable"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_environments"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_instances"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_websocket_applications"
@@ -109,6 +110,7 @@ func (p *LaravelcloudProvider) Resources(_ context.Context) []func() resource.Re
 		resource_database_snapshots.NewDatabaseSnapshotsResource,
 		resource_deployments.NewDeploymentsResource,
 		resource_domains.NewDomainsResource,
+		resource_environment_variable.NewEnvironmentVariableResource,
 		resource_environments.NewEnvironmentsResource,
 		resource_instances.NewInstancesResource,
 		resource_websocket_applications.NewWebsocketApplicationsResource,

@@ -4,6 +4,21 @@ All notable changes to this provider are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/), and the provider follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] — 0.3.0
+
+### Added
+
+- `environment_variable`: manages one environment variable of an environment
+  (`environment`, `key`, and a sensitive `value`), so a secret can be set from
+  Terraform instead of by hand. Each resource touches only its own key and
+  leaves the environment's other variables alone. A value changed or deleted
+  outside Terraform shows as drift. Creating a key that is already set fails
+  instead of overwriting it; import it with `environment-id/KEY`. A change
+  reaches the application with the next deployment, since Laravel Cloud does
+  not redeploy when a variable changes.
+- The fake API in the provider tests keeps environment variables in memory,
+  so the tests can set, change and delete them.
+
 ## [0.2.0] — 2026-11-17
 
 Existing Laravel Cloud resources can now be imported and adopted: applications,

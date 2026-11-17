@@ -45,6 +45,10 @@ CRUD (create, read, update where supported, delete, import) is implemented for:
 `database_snapshots`, `domains`, `commands`, `deployments`,
 `websocket_clusters`, `websocket_applications`.
 
+`environment_variable` manages one environment variable at a time and is
+written by hand, because the API sets and deletes variables in bulk on their
+environment.
+
 The schemas are generated from the OpenAPI document; the hand-written CRUD lives
 in `internal/provider/resource_*/*_resource.go`. Shared helpers are in
 `internal/providerutil` and the HTTP client in `internal/cloud`. Regenerate with
