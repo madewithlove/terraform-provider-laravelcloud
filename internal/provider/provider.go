@@ -29,6 +29,11 @@ import (
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/provider/resource_websocket_clusters"
 )
 
+// deprecationMessage is shown whenever the provider is configured.
+const deprecationMessage = "madewithlove/laravelcloud is no longer maintained. Use Laravel's official provider, " +
+	"laravel/laravel (https://search.opentofu.org/provider/laravel/laravel/latest), instead: its laravel_cloud_* " +
+	"resources import existing Laravel Cloud resources by their ID."
+
 type LaravelcloudProvider struct {
 	version string
 }
@@ -53,7 +58,10 @@ type LaravelcloudProviderModel struct {
 
 func (p *LaravelcloudProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manage [Laravel Cloud](https://cloud.laravel.com) resources.",
+		MarkdownDescription: "Manage [Laravel Cloud](https://cloud.laravel.com) resources.\n\n" +
+			"~> **Deprecated:** this provider is no longer maintained. Use Laravel's official provider, " +
+			"[`laravel/laravel`](https://search.opentofu.org/provider/laravel/laravel/latest), instead.",
+		DeprecationMessage: deprecationMessage,
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
 				Optional:            true,

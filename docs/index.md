@@ -3,11 +3,14 @@
 page_title: "laravelcloud Provider"
 description: |-
   Manage Laravel Cloud https://cloud.laravel.com resources.
+  ~> Deprecated: this provider is no longer maintained. Use Laravel's official provider, laravel/laravel https://search.opentofu.org/provider/laravel/laravel/latest, instead.
 ---
 
 # laravelcloud Provider
 
 Manage [Laravel Cloud](https://cloud.laravel.com) resources.
+
+~> **Deprecated:** this provider is no longer maintained. Use Laravel's official provider, [`laravel/laravel`](https://search.opentofu.org/provider/laravel/laravel/latest), instead.
 
 ## Example Usage
 
