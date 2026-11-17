@@ -61,6 +61,9 @@ clusters, and domains import with a plan that shows no changes.
   replacement-forcing attribute (`cluster_id`, `cloudflare_strategy`,
   `wildcard_enabled`, `www_redirect`) was unset planned to replace the
   resource. Those attributes now keep their state value.
+- `buckets`: the fields inside `cors_settings` are optional but not computed.
+  The API does not echo them, so any field left out of a configured
+  `cors_settings` stayed unknown and the apply failed.
 
 ### Notes
 
