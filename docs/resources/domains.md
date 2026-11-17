@@ -14,8 +14,14 @@ Manages a domain for a Laravel Cloud environment.
 
 ```terraform
 resource "laravelcloud_domains" "example" {
-  environment = "environment-id"
-  name        = "example-name"
+  environment         = "environment-id"
+  name                = "app.example.com"
+  cloudflare_strategy = "dns_proxy"
+}
+
+# The records Laravel Cloud asks for, e.g. to create them at your DNS provider.
+output "origin_cname" {
+  value = laravelcloud_domains.example.dns_records.origin_cname
 }
 ```
 
@@ -24,7 +30,7 @@ resource "laravelcloud_domains" "example" {
 
 ### Required
 
-- `environment` (String) The environment identifier
+- `environment` (String) The environment this resource belongs to.
 - `name` (String)
 
 ### Optional
@@ -55,11 +61,51 @@ resource "laravelcloud_domains" "example" {
 
 Read-Only:
 
-- `dcv` (String)
-- `origin` (String)
-- `origin_cname` (String)
-- `pre_verification` (String)
+- `dcv` (Attributes) (see [below for nested schema](#nestedatt--dns_records--dcv))
+- `origin` (Attributes) (see [below for nested schema](#nestedatt--dns_records--origin))
+- `origin_cname` (Attributes) (see [below for nested schema](#nestedatt--dns_records--origin_cname))
+- `pre_verification` (Attributes) (see [below for nested schema](#nestedatt--dns_records--pre_verification))
 - `ssl` (Attributes List) (see [below for nested schema](#nestedatt--dns_records--ssl))
+
+<a id="nestedatt--dns_records--dcv"></a>
+### Nested Schema for `dns_records.dcv`
+
+Read-Only:
+
+- `name` (String)
+- `type` (String)
+- `value` (String)
+
+
+<a id="nestedatt--dns_records--origin"></a>
+### Nested Schema for `dns_records.origin`
+
+Read-Only:
+
+- `name` (String)
+- `type` (String)
+- `value` (String)
+
+
+<a id="nestedatt--dns_records--origin_cname"></a>
+### Nested Schema for `dns_records.origin_cname`
+
+Read-Only:
+
+- `name` (String)
+- `type` (String)
+- `value` (String)
+
+
+<a id="nestedatt--dns_records--pre_verification"></a>
+### Nested Schema for `dns_records.pre_verification`
+
+Read-Only:
+
+- `name` (String)
+- `type` (String)
+- `value` (String)
+
 
 <a id="nestedatt--dns_records--ssl"></a>
 ### Nested Schema for `dns_records.ssl`

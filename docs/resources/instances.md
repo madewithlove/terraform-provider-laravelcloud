@@ -13,16 +13,17 @@ Manages an instance of an environment in Laravel Cloud.
 ## Example Usage
 
 ```terraform
+# A worker instance. Every environment also has an "app" instance, created with
+# the environment; import it to manage it (see import.sh).
 resource "laravelcloud_instances" "example" {
-  environment        = "environment-id"
-  min_replicas       = 1
-  name               = "example-name"
-  polling_interval   = 1
-  scaling_type       = "none"
-  shutdown_timeout   = 1
-  size               = "flex-512mb"
-  type               = "service"
-  visibility_timeout = 1
+  environment    = "environment-id"
+  name           = "example-name"
+  type           = "service"
+  size           = "flex-512mb"
+  scaling_type   = "none"
+  min_replicas   = 1
+  max_replicas   = 1
+  uses_scheduler = false
 }
 ```
 
@@ -32,24 +33,24 @@ resource "laravelcloud_instances" "example" {
 ### Required
 
 - `environment` (String) The environment this resource belongs to.
-- `min_replicas` (Number) The minimum number of replicas the instance runs. Only applicable to the `custom` scaling type, and rejected when used with `auto`. Not applicable to managed queues, which always scale to zero when idle.
 - `name` (String)
-- `polling_interval` (Number) How often, in seconds (1–60), the queue is polled for new jobs. Null for non-queue instances.
 - `scaling_type` (String)
-- `shutdown_timeout` (Number)
 - `size` (String)
 - `type` (String)
-- `visibility_timeout` (Number) How long, in seconds (0–43200), a received job stays hidden from other workers before it becomes available again. Null for non-queue instances.
 
 ### Optional
 
 - `background_processes` (Attributes List) (see [below for nested schema](#nestedatt--background_processes))
 - `instance` (String) The instance identifier
 - `max_replicas` (Number) The maximum number of replicas the instance can scale to. Only applicable to the `custom` scaling type, and rejected when used with `auto`.
+- `min_replicas` (Number) The minimum number of replicas the instance runs. Only applicable to the `custom` scaling type, and rejected when used with `auto`. Not applicable to managed queues, which always scale to zero when idle.
+- `polling_interval` (Number) How often, in seconds (1–60), the queue is polled for new jobs. Null for non-queue instances.
 - `scaling_cpu_threshold_percentage` (Number)
 - `scaling_memory_threshold_percentage` (Number)
+- `shutdown_timeout` (Number)
 - `sleep_with_app` (Boolean) Whether worker replicas scale to zero alongside the app cluster, waking when they receive traffic. Only applicable to worker (service) instances.
 - `uses_scheduler` (Boolean)
+- `visibility_timeout` (Number) How long, in seconds (0–43200), a received job stays hidden from other workers before it becomes available again. Null for non-queue instances.
 
 ### Read-Only
 
