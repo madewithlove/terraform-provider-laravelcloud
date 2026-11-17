@@ -5,6 +5,7 @@ package resource_applications
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -61,6 +62,12 @@ func (r *applicationsResource) Create(ctx context.Context, req resource.CreateRe
 		"name":       plan.Name.ValueString(),
 		"region":     plan.Region.ValueString(),
 		"repository": plan.Repository.ValueString(),
+	}
+	if !plan.SourceControlProviderType.IsNull() && !plan.SourceControlProviderType.IsUnknown() {
+		body["source_control_provider_type"] = plan.SourceControlProviderType.ValueString()
+	}
+	if !plan.ClusterId.IsNull() && !plan.ClusterId.IsUnknown() {
+		body["cluster_id"] = plan.ClusterId.ValueString()
 	}
 
 	var data applicationData
@@ -125,13 +132,38 @@ func (r *applicationsResource) ImportState(ctx context.Context, req resource.Imp
 type applicationData struct {
 	ID         string `json:"id"`
 	Attributes struct {
-		Name         string  `json:"name"`
-		Region       string  `json:"region"`
-		Repository   string  `json:"repository"`
-		Slug         *string `json:"slug"`
-		SlackChannel *string `json:"slack_channel"`
-		CreatedAt    *string `json:"created_at"`
+		Name         string        `json:"name"`
+		Region       string        `json:"region"`
+		Repository   repositoryRef `json:"repository"`
+		Slug         *string       `json:"slug"`
+		SlackChannel *string       `json:"slack_channel"`
+		AvatarUrl    *string       `json:"avatar_url"`
+		CreatedAt    *string       `json:"created_at"`
 	} `json:"attributes"`
+}
+
+// repositoryRef is an application's repository. The create request takes the
+// "owner/name" string, but the API returns an object such as
+// {"full_name": "owner/name", "default_branch": "main"}; both decode to the
+// full name so it round-trips with the configured value.
+type repositoryRef struct {
+	FullName string
+}
+
+func (r *repositoryRef) UnmarshalJSON(b []byte) error {
+	var name string
+	if err := json.Unmarshal(b, &name); err == nil {
+		r.FullName = name
+		return nil
+	}
+	var object struct {
+		FullName string `json:"full_name"`
+	}
+	if err := json.Unmarshal(b, &object); err != nil {
+		return fmt.Errorf("decoding repository: %w", err)
+	}
+	r.FullName = object.FullName
+	return nil
 }
 
 func (d *applicationData) apply(m *ApplicationsModel) {
@@ -139,15 +171,13 @@ func (d *applicationData) apply(m *ApplicationsModel) {
 	m.Application = types.StringValue(d.ID)
 	m.Name = types.StringValue(d.Attributes.Name)
 	m.Region = types.StringValue(d.Attributes.Region)
-	m.Repository = types.StringValue(d.Attributes.Repository)
-	m.Slug = optionalString(d.Attributes.Slug)
-	m.SlackChannel = optionalString(d.Attributes.SlackChannel)
-	m.CreatedAt = optionalString(d.Attributes.CreatedAt)
-}
+	m.Repository = types.StringValue(d.Attributes.Repository.FullName)
+	m.Slug = providerutil.OptionalString(d.Attributes.Slug)
+	m.SlackChannel = providerutil.OptionalString(d.Attributes.SlackChannel)
+	m.AvatarUrl = providerutil.OptionalString(d.Attributes.AvatarUrl)
+	m.CreatedAt = providerutil.OptionalString(d.Attributes.CreatedAt)
 
-func optionalString(s *string) types.String {
-	if s == nil {
-		return types.StringNull()
-	}
-	return types.StringValue(*s)
+	// The API does not echo these create inputs; keep what was configured.
+	m.ClusterId = providerutil.KnownString(m.ClusterId)
+	m.SourceControlProviderType = providerutil.KnownString(m.SourceControlProviderType)
 }
