@@ -73,3 +73,30 @@ func TestSetOptionalSkipsUnsetValues(t *testing.T) {
 		}
 	}
 }
+
+func TestPayloadFieldsDependOnType(t *testing.T) {
+	plan := InstancesModel{
+		MinReplicas:       types.Int64Value(0),
+		PollingInterval:   types.Int64Value(20),
+		VisibilityTimeout: types.Int64Value(30),
+		ShutdownTimeout:   types.Int64Value(90),
+	}
+
+	queue := map[string]any{}
+	setOptional(queue, &plan, payloadFields("managed_queue")...)
+	if _, ok := queue["min_replicas"]; ok {
+		t.Error("a managed queue must not send min_replicas")
+	}
+	if queue["polling_interval"] != int64(20) || queue["shutdown_timeout"] != int64(90) {
+		t.Errorf("a managed queue must send its timing settings, got %v", queue)
+	}
+
+	app := map[string]any{}
+	setOptional(app, &plan, payloadFields("app")...)
+	if _, ok := app["polling_interval"]; ok {
+		t.Error("an app instance must not send queue timing settings")
+	}
+	if app["min_replicas"] != int64(0) {
+		t.Errorf("an app instance must send min_replicas, got %v", app)
+	}
+}

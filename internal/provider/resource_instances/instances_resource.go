@@ -12,6 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/cloud"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/providerutil"
@@ -49,6 +50,7 @@ func (r *instancesResource) Schema(ctx context.Context, _ resource.SchemaRequest
 	// requires replacement.
 	providerutil.RequiresReplace(s.Attributes, "type")
 	providerutil.UseStateForUnknown(s.Attributes, "id", "instance")
+	optionalBackgroundProcesses(s.Attributes)
 
 	s.MarkdownDescription = "Manages an instance of an environment in Laravel Cloud."
 	resp.Schema = s
@@ -67,10 +69,7 @@ func (r *instancesResource) Create(ctx context.Context, req resource.CreateReque
 		"size":         plan.Size.ValueString(),
 		"scaling_type": plan.ScalingType.ValueString(),
 	}
-	setOptional(body, &plan,
-		"max_replicas", "min_replicas", "uses_scheduler", "sleep_with_app",
-		"scaling_cpu_threshold_percentage", "scaling_memory_threshold_percentage",
-		"visibility_timeout", "polling_interval", "shutdown_timeout")
+	setOptional(body, &plan, payloadFields(plan.Type.ValueString())...)
 	if bp := providerutil.AttrToAny(plan.BackgroundProcesses); bp != nil {
 		body["background_processes"] = bp
 	}
@@ -120,10 +119,7 @@ func (r *instancesResource) Update(ctx context.Context, req resource.UpdateReque
 		"size":         plan.Size.ValueString(),
 		"scaling_type": plan.ScalingType.ValueString(),
 	}
-	setOptional(body, &plan,
-		"max_replicas", "min_replicas", "uses_scheduler", "sleep_with_app",
-		"scaling_cpu_threshold_percentage", "scaling_memory_threshold_percentage",
-		"visibility_timeout", "polling_interval", "shutdown_timeout")
+	setOptional(body, &plan, payloadFields(plan.Type.ValueString())...)
 
 	endpoint := fmt.Sprintf("/instances/%s", plan.Instance.ValueString())
 	if err := r.client.Do(ctx, http.MethodPatch, endpoint, body, nil); err != nil {
@@ -163,6 +159,45 @@ func (r *instancesResource) ImportState(ctx context.Context, req resource.Import
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("environment"), parts[0])...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("instance"), parts[1])...)
+}
+
+// optionalBackgroundProcesses makes the background_processes list and its
+// nested attributes optional but not computed. The API does not echo them, so
+// an unset computed field would stay unknown after apply. The generators
+// cannot express this, so it is applied to the generated schema here.
+func optionalBackgroundProcesses(attrs map[string]schema.Attribute) {
+	list, ok := attrs["background_processes"].(schema.ListNestedAttribute)
+	if !ok {
+		return
+	}
+	list.Computed = false
+	nested := list.NestedObject.Attributes
+	providerutil.Input(nested, "command", "processes", "type", "config")
+	if config, ok := nested["config"].(schema.SingleNestedAttribute); ok {
+		names := make([]string, 0, len(config.Attributes))
+		for name := range config.Attributes {
+			names = append(names, name)
+		}
+		providerutil.Input(config.Attributes, names...)
+		config.Computed = false
+		nested["config"] = config
+	}
+	attrs["background_processes"] = list
+}
+
+// payloadFields lists the optional attributes a create or update request may
+// carry for an instance type. Managed queues always scale to zero when idle:
+// the API rejects min_replicas for them and takes the queue timing settings
+// instead, which apply to no other type.
+func payloadFields(instanceType string) []string {
+	fields := []string{
+		"max_replicas", "uses_scheduler", "sleep_with_app",
+		"scaling_cpu_threshold_percentage", "scaling_memory_threshold_percentage",
+	}
+	if instanceType == "managed_queue" {
+		return append(fields, "visibility_timeout", "polling_interval", "shutdown_timeout")
+	}
+	return append(fields, "min_replicas")
 }
 
 // setOptional adds the named optional attributes to a request body when the

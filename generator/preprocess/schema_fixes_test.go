@@ -42,8 +42,8 @@ func TestApplySchemaFixesToPinnedSpec(t *testing.T) {
 		t.Errorf("CreateInstanceRequest.required = %v, want %v", got, want)
 	}
 	shutdown := mustLookup(t, schemas, "CreateInstanceRequest.shutdown_timeout")
-	if _, ok := shutdown["maximum"]; ok {
-		t.Errorf("shutdown_timeout keeps its impossible bounds: %v", shutdown)
+	if _, ok := shutdown["maximum"]; ok || shutdown["minimum"] != 1 {
+		t.Errorf("shutdown_timeout should be bounded to at least 1, got %v", shutdown)
 	}
 
 	if dcv := mustLookup(t, schemas, "DomainResource.attributes.dns_records.dcv"); dcv["type"] != "object" {

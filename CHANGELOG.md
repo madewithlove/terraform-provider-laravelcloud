@@ -37,10 +37,23 @@ clusters, and domains import with a plan that shows no changes.
   uses the full schema.
 - `environments`: `branch` was read as empty, which planned a replacement after
   an import. It is now read from the sideloaded branch (`?include=branch`).
-- `instances`: `polling_interval`, `visibility_timeout`, `shutdown_timeout`
-  and `min_replicas` are optional (they only apply to managed queues), and
-  `shutdown_timeout` no longer rejects every value. All attributes the API
-  returns are read, so none stay unknown after apply.
+- `instances` is usable for managed queues and imports app instances:
+  - `shutdown_timeout` carried `int64validator.Between(1, 0)`, which fails on
+    construction, so `terraform validate` failed for any configuration using
+    the resource. It is now `AtLeast(1)`.
+  - `polling_interval`, `visibility_timeout`, `shutdown_timeout` and
+    `min_replicas` are optional; the queue settings only apply to managed
+    queues and are null for app and service instances.
+  - The request payload depends on `type`: managed queues send the queue
+    settings and never `min_replicas`, which the API rejects for them; other
+    types send `min_replicas` and no queue settings. Unset optional settings
+    are no longer sent as zero values.
+  - Every attribute the API returns (`is_default`, `paused`, `queue_status`,
+    `sleep_with_app`, the queue settings, ...) is read, so none stay unknown
+    after apply.
+  - The nested `background_processes` attributes are optional but not
+    computed: the API does not echo them, so unset fields stayed unknown
+    after apply.
 - `database_clusters` and `background_processes`: `config` is read back, so an
   import matches the configuration and drift is detected. Cluster settings are
   sent as JSON booleans and numbers instead of strings.
@@ -53,7 +66,10 @@ clusters, and domains import with a plan that shows no changes.
 
 - The schema is still generated from the OpenAPI document pinned in
   `generator/docs.openapi.json`. Where it disagrees with the live API, the
-  preprocessor now corrects it (`generator/preprocess/schema_fixes.go`).
+  preprocessor now corrects it (`generator/preprocess/schema_fixes.go`), so
+  `make generate` reproduces the fixes. Schema changes the generators cannot
+  express are applied in the hand-written resource (`background_processes`
+  on instances).
 - A cluster `config` listing only some settings shows one in-place update
   after an import (the import reads every setting); it is stable afterwards.
 

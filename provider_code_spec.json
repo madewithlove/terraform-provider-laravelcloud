@@ -1782,7 +1782,19 @@
 					{
 						"name": "shutdown_timeout",
 						"int64": {
-							"computed_optional_required": "computed_optional"
+							"computed_optional_required": "computed_optional",
+							"validators": [
+								{
+									"custom": {
+										"imports": [
+											{
+												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+											}
+										],
+										"schema_definition": "int64validator.AtLeast(1)"
+									}
+								}
+							]
 						}
 					},
 					{

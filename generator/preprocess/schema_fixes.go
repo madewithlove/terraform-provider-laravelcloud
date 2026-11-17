@@ -43,8 +43,8 @@ var propertyOverrides = map[string]map[string]any{
 	"DomainResource.attributes.dns_records.origin_cname":     dnsRecordSchema(),
 	"DomainResource.attributes.dns_records.pre_verification": dnsRecordSchema(),
 	// The pinned spec bounds this to minimum 1, maximum 0, which rejects every
-	// value. The current upstream spec drops the bounds; so do we.
-	"CreateInstanceRequest.shutdown_timeout": {"type": "integer"},
+	// value. Keep the lower bound and drop the impossible maximum.
+	"CreateInstanceRequest.shutdown_timeout": {"type": "integer", "minimum": 1},
 }
 
 func dnsRecordSchema() map[string]any {
