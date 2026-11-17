@@ -8,7 +8,7 @@ on [Keep a Changelog](https://keepachangelog.com/), and the provider follows
 
 Existing Laravel Cloud resources can now be imported and adopted: applications,
 environments, app instances, background processes, Laravel MySQL and Neon
-clusters, and domains import with a plan that shows no changes.
+clusters, domains and buckets import with a plan that shows no changes.
 
 ### Added
 
@@ -64,6 +64,10 @@ clusters, and domains import with a plan that shows no changes.
 - `buckets`: the fields inside `cors_settings` are optional but not computed.
   The API does not echo them, so any field left out of a configured
   `cors_settings` stayed unknown and the apply failed.
+- `buckets`: importing a bucket planned to replace it, because `jurisdiction`,
+  `key_name` and `key_permission` were never read back. `jurisdiction` is now
+  read, and an import adopts the bucket's first key (`?include=keys`); a
+  bucket without keys takes the configured key inputs in place.
 
 ### Notes
 
