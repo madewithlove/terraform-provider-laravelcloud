@@ -926,7 +926,7 @@
 												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 											}
 										],
-										"schema_definition": "stringvalidator.OneOf(\n\"laravel_mysql_84\",\n\"laravel_mysql_8\",\n\"aws_rds_mysql_8\",\n\"aws_rds_postgres_18\",\n\"neon_serverless_postgres_18\",\n\"neon_serverless_postgres_17\",\n\"neon_serverless_postgres_16\",\n)"
+										"schema_definition": "stringvalidator.OneOf(\n\"laravel_mysql_84\",\n\"laravel_mysql_8\",\n\"aws_rds_mysql_8\",\n\"aws_rds_postgres_18\",\n\"neon_serverless_postgres_18\",\n\"neon_serverless_postgres_17\",\n\"neon_serverless_postgres_16\",\n\"laravel_mysql\",\n\"aws_rds_mysql\",\n\"aws_rds_postgres\",\n\"neon_serverless_postgres\",\n)"
 									}
 								}
 							]
@@ -1289,26 +1289,106 @@
 							"attributes": [
 								{
 									"name": "dcv",
-									"string": {
-										"computed_optional_required": "computed"
+									"single_nested": {
+										"computed_optional_required": "computed",
+										"attributes": [
+											{
+												"name": "name",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "type",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "value",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											}
+										]
 									}
 								},
 								{
 									"name": "origin",
-									"string": {
-										"computed_optional_required": "computed"
+									"single_nested": {
+										"computed_optional_required": "computed",
+										"attributes": [
+											{
+												"name": "name",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "type",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "value",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											}
+										]
 									}
 								},
 								{
 									"name": "origin_cname",
-									"string": {
-										"computed_optional_required": "computed"
+									"single_nested": {
+										"computed_optional_required": "computed",
+										"attributes": [
+											{
+												"name": "name",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "type",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "value",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											}
+										]
 									}
 								},
 								{
 									"name": "pre_verification",
-									"string": {
-										"computed_optional_required": "computed"
+									"single_nested": {
+										"computed_optional_required": "computed",
+										"attributes": [
+											{
+												"name": "name",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "type",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "value",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											}
+										]
 									}
 								},
 								{
@@ -1473,74 +1553,74 @@
 					{
 						"name": "background_processes",
 						"list_nested": {
-							"computed_optional_required": "optional",
+							"computed_optional_required": "computed_optional",
 							"nested_object": {
 								"attributes": [
 									{
 										"name": "command",
 										"string": {
-											"computed_optional_required": "optional",
+											"computed_optional_required": "computed_optional",
 											"description": "Custom command to run. Required when type is 'custom'. Not applicable for 'worker' type."
 										}
 									},
 									{
 										"name": "config",
 										"single_nested": {
-											"computed_optional_required": "optional",
+											"computed_optional_required": "computed_optional",
 											"attributes": [
 												{
 													"name": "backoff",
 													"int64": {
-														"computed_optional_required": "optional",
+														"computed_optional_required": "computed_optional",
 														"description": "Number of seconds to wait before retrying a failed job. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "connection",
 													"string": {
-														"computed_optional_required": "optional",
+														"computed_optional_required": "computed_optional",
 														"description": "The queue connection name. Only applicable for 'worker' type background processes. Managed queues must use 'cloud'."
 													}
 												},
 												{
 													"name": "force",
 													"bool": {
-														"computed_optional_required": "optional",
+														"computed_optional_required": "computed_optional",
 														"description": "Force the worker to run even in maintenance mode. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "queue",
 													"string": {
-														"computed_optional_required": "optional",
+														"computed_optional_required": "computed_optional",
 														"description": "The queue name(s) to process. Can be comma-separated for multiple queues. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "rest",
 													"int64": {
-														"computed_optional_required": "optional",
+														"computed_optional_required": "computed_optional",
 														"description": "Number of seconds to rest between jobs. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "sleep",
 													"int64": {
-														"computed_optional_required": "optional",
+														"computed_optional_required": "computed_optional",
 														"description": "Number of seconds to sleep when no jobs are available. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "timeout",
 													"int64": {
-														"computed_optional_required": "optional",
+														"computed_optional_required": "computed_optional",
 														"description": "Number of seconds a job can run before timing out. Only applicable for 'worker' type background processes."
 													}
 												},
 												{
 													"name": "tries",
 													"int64": {
-														"computed_optional_required": "optional",
+														"computed_optional_required": "computed_optional",
 														"description": "Number of times a job should be attempted. Only applicable for 'worker' type background processes."
 													}
 												}
@@ -1604,7 +1684,7 @@
 					{
 						"name": "min_replicas",
 						"int64": {
-							"computed_optional_required": "required",
+							"computed_optional_required": "computed_optional",
 							"description": "The minimum number of replicas the instance runs. Only applicable to the `custom` scaling type, and rejected when used with `auto`. Not applicable to managed queues, which always scale to zero when idle."
 						}
 					},
@@ -1629,7 +1709,7 @@
 					{
 						"name": "polling_interval",
 						"int64": {
-							"computed_optional_required": "required",
+							"computed_optional_required": "computed_optional",
 							"description": "How often, in seconds (1–60), the queue is polled for new jobs. Null for non-queue instances.",
 							"validators": [
 								{
@@ -1702,7 +1782,7 @@
 					{
 						"name": "shutdown_timeout",
 						"int64": {
-							"computed_optional_required": "required",
+							"computed_optional_required": "computed_optional",
 							"validators": [
 								{
 									"custom": {
@@ -1754,7 +1834,7 @@
 												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 											}
 										],
-										"schema_definition": "stringvalidator.OneOf(\n\"service\",\n\"managed_queue\",\n)"
+										"schema_definition": "stringvalidator.OneOf(\n\"service\",\n\"managed_queue\",\n\"app\",\n\"queue\",\n)"
 									}
 								}
 							]
@@ -1769,7 +1849,7 @@
 					{
 						"name": "visibility_timeout",
 						"int64": {
-							"computed_optional_required": "required",
+							"computed_optional_required": "computed_optional",
 							"description": "How long, in seconds (0–43200), a received job stays hidden from other workers before it becomes available again. Null for non-queue instances.",
 							"validators": [
 								{

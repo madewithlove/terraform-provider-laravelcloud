@@ -69,6 +69,20 @@ func NotFound(err error) bool {
 // "data" envelope is decoded into out directly. Non-2xx responses return an
 // *APIError.
 func (c *Client) Do(ctx context.Context, method, path string, body, out any) error {
+	return c.DoWithIncluded(ctx, method, path, body, out, nil)
+}
+
+// Included is a resource sideloaded into a JSON:API document's "included"
+// member, as requested with the "include" query parameter.
+type Included struct {
+	ID         string          `json:"id"`
+	Type       string          `json:"type"`
+	Attributes json.RawMessage `json:"attributes"`
+}
+
+// DoWithIncluded behaves like Do, and also decodes the document's "included"
+// member into included when included is non-nil.
+func (c *Client) DoWithIncluded(ctx context.Context, method, path string, body, out any, included *[]Included) error {
 	var reader io.Reader
 	if body != nil {
 		encoded, err := json.Marshal(body)
@@ -110,9 +124,13 @@ func (c *Client) Do(ctx context.Context, method, path string, body, out any) err
 	// Successful payloads are wrapped in a JSON:API "data" envelope; unwrap it
 	// when present, otherwise decode the body directly.
 	var envelope struct {
-		Data json.RawMessage `json:"data"`
+		Data     json.RawMessage `json:"data"`
+		Included []Included      `json:"included"`
 	}
 	if err := json.Unmarshal(payload, &envelope); err == nil && len(envelope.Data) > 0 {
+		if included != nil {
+			*included = envelope.Included
+		}
 		return json.Unmarshal(envelope.Data, out)
 	}
 	return json.Unmarshal(payload, out)

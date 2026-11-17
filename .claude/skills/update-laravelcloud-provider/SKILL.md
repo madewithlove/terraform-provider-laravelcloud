@@ -79,6 +79,12 @@ hand-editing generated code:
   Required + RequiresReplace. Add an entry when a new nested resource is added.
 - **`responseFixes` map** — corrects wrong `$ref`s in the upstream spec (none
   currently needed).
+- **`schema_fixes.go` tables** — where the spec disagrees with what the live
+  API returns: `enumExtensions` adds enum values the API reports (unversioned
+  database types, the `app`/`queue` instance types), `optionalFields` drops
+  over-eager `required` entries, and `propertyOverrides` replaces mistyped
+  properties (domain DNS records). `applySchemaFixes` fails when an entry no
+  longer matches the spec, so after a refresh drop the entries upstream fixed.
 
 After regenerating, a stray `data`/`include` attribute, a missing parent, a
 skipped resource, or a reserved-word error are all signs a table needs an entry.

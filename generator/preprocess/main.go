@@ -37,7 +37,9 @@
 //
 // It also genericizes discriminated unions to string maps, strips the JSON:API
 // "include" query parameter, renames reserved-word fields, and injects parent
-// path parameters; see the tables below.
+// path parameters; see the tables below. Places where the spec disagrees with
+// the live API (missing enum values, over-eager "required" lists, mistyped
+// properties) are corrected by the tables in schema_fixes.go.
 //
 // Usage:
 //
@@ -160,6 +162,9 @@ func main() {
 		schemas, _ := components["schemas"].(map[string]any)
 		applyRenames(schemas)
 		applyParentParams(schemas)
+		if err := applySchemaFixes(schemas); err != nil {
+			log.Fatalf("applying schema fixes: %v", err)
+		}
 		components["schemas"] = rewrite(schemas, c)
 	}
 	doc["paths"] = rewrite(doc["paths"], c)

@@ -5,7 +5,12 @@ package resource_background_processes
 
 import (
 	"context"
+	"encoding/json"
+	"strconv"
+
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -63,7 +68,7 @@ func (r *backgroundProcessesResource) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	data.apply(&plan)
+	resp.Diagnostics.Append(data.apply(ctx, &plan, false)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -85,7 +90,7 @@ func (r *backgroundProcessesResource) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	data.apply(&state)
+	resp.Diagnostics.Append(data.apply(ctx, &state, true)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -108,7 +113,7 @@ func (r *backgroundProcessesResource) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	data.apply(&plan)
+	resp.Diagnostics.Append(data.apply(ctx, &plan, false)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -150,24 +155,124 @@ func (r *backgroundProcessesResource) body(plan *BackgroundProcessesModel) map[s
 	return body
 }
 
-// backgroundProcessData is the JSON:API representation. The "config" block is a
-// write-only input preserved from configuration, not mapped back.
+// backgroundProcessData is the JSON:API representation of a background process.
 type backgroundProcessData struct {
 	ID         string `json:"id"`
 	Attributes struct {
-		Command   *string `json:"command"`
-		Processes *int64  `json:"processes"`
-		Type      string  `json:"type"`
+		Command   *string        `json:"command"`
+		Processes *int64         `json:"processes"`
+		Type      string         `json:"type"`
+		Config    *processConfig `json:"config"`
 	} `json:"attributes"`
 }
 
-func (d *backgroundProcessData) apply(m *BackgroundProcessesModel) {
+// processConfig is a worker's queue settings as the API returns them. The API
+// sends the numeric settings as strings ("tries": "1"), so they are decoded
+// leniently.
+type processConfig struct {
+	Connection *string       `json:"connection"`
+	Queue      *string       `json:"queue"`
+	Tries      *lenientInt64 `json:"tries"`
+	Backoff    *lenientInt64 `json:"backoff"`
+	Sleep      *lenientInt64 `json:"sleep"`
+	Rest       *lenientInt64 `json:"rest"`
+	Timeout    *lenientInt64 `json:"timeout"`
+	Force      *bool         `json:"force"`
+}
+
+// lenientInt64 decodes an integer sent either as a JSON number or a string.
+type lenientInt64 int64
+
+func (i *lenientInt64) UnmarshalJSON(b []byte) error {
+	var n int64
+	if err := json.Unmarshal(b, &n); err == nil {
+		*i = lenientInt64(n)
+		return nil
+	}
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return fmt.Errorf("decoding integer: %w", err)
+	}
+	n, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return fmt.Errorf("decoding integer %q: %w", s, err)
+	}
+	*i = lenientInt64(n)
+	return nil
+}
+
+func (c *processConfig) empty() bool {
+	return c == nil || (c.Connection == nil && c.Queue == nil && c.Tries == nil && c.Backoff == nil &&
+		c.Sleep == nil && c.Rest == nil && c.Timeout == nil && c.Force == nil)
+}
+
+// apply copies the API response onto the model. On a read (fromRead), the
+// API's config settings win so drift is detected; after create or update, the
+// planned settings are kept and only the ones left unknown are filled in.
+func (d *backgroundProcessData) apply(ctx context.Context, m *BackgroundProcessesModel, fromRead bool) diag.Diagnostics {
 	m.BackgroundProcess = types.StringValue(d.ID)
 	m.Type = types.StringValue(d.Attributes.Type)
 	if d.Attributes.Command != nil {
 		m.Command = types.StringValue(*d.Attributes.Command)
+	} else {
+		m.Command = providerutil.KnownString(m.Command)
 	}
 	if d.Attributes.Processes != nil {
 		m.Processes = types.Int64Value(*d.Attributes.Processes)
 	}
+
+	config := d.Attributes.Config
+	if config.empty() {
+		if fromRead || m.Config.IsUnknown() {
+			m.Config = NewConfigValueNull()
+		}
+		return nil
+	}
+	if !fromRead && m.Config.IsNull() {
+		// Not configured: keep it null rather than adopting the API defaults,
+		// so the state matches the plan.
+		return nil
+	}
+
+	prior := m.Config
+	known := !prior.IsNull() && !prior.IsUnknown()
+	pick := func(apiValue attr.Value, priorValue attr.Value) attr.Value {
+		if !fromRead && known && priorValue != nil && !priorValue.IsUnknown() {
+			return priorValue
+		}
+		return apiValue
+	}
+	var priorAttrs map[string]attr.Value
+	if known {
+		priorAttrs = map[string]attr.Value{
+			"connection": prior.Connection, "queue": prior.Queue, "tries": prior.Tries,
+			"backoff": prior.Backoff, "sleep": prior.Sleep, "rest": prior.Rest,
+			"timeout": prior.Timeout, "force": prior.Force,
+		}
+	}
+	apiAttrs := map[string]attr.Value{
+		"connection": providerutil.OptionalString(config.Connection),
+		"queue":      providerutil.OptionalString(config.Queue),
+		"tries":      config.Tries.value(),
+		"backoff":    config.Backoff.value(),
+		"sleep":      config.Sleep.value(),
+		"rest":       config.Rest.value(),
+		"timeout":    config.Timeout.value(),
+		"force":      providerutil.OptionalBool(config.Force),
+	}
+	attributes := make(map[string]attr.Value, len(apiAttrs))
+	for name, value := range apiAttrs {
+		attributes[name] = pick(value, priorAttrs[name])
+	}
+
+	value, diags := NewConfigValue(ConfigValue{}.AttributeTypes(ctx), attributes)
+	m.Config = value
+	return diags
+}
+
+func (i *lenientInt64) value() types.Int64 {
+	if i == nil {
+		return types.Int64Null()
+	}
+	return types.Int64Value(int64(*i))
 }

@@ -67,9 +67,12 @@ clean them up promptly.
 
 - `databases.connection_details` is currently left null (the computed nested
   block isn't mapped yet).
-- `databases.config` and `background_processes.config` round-trip as provided
-  (polymorphic `config` is a `map(string)` / preserved input), so drift on those
-  isn't detected.
+- `databases.config` is read back on refresh only for the keys configured
+  (all keys on import); `background_processes.config` is read back in full.
+- Prefer import-only checks against existing resources: `TestAccImportExisting`
+  plans an import with generated configuration and asserts no changes, and
+  never creates or destroys anything (see the comment on the test for the
+  environment variables).
 
 ## Cleanup
 

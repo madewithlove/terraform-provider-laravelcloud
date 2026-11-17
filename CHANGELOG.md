@@ -4,30 +4,83 @@ All notable changes to this provider are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/), and the provider follows
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] — Unreleased
+
+Existing Laravel Cloud resources can now be imported and adopted: applications,
+environments, app instances, background processes, Laravel MySQL and Neon
+clusters, domains and buckets import with a plan that shows no changes.
+
+### Added
+
+- `instances`: `type` accepts `app` and `queue`, the types of instances
+  Laravel Cloud creates itself, so an environment's app instance can be
+  imported and managed.
+- `database_clusters`: `type` accepts the unversioned engine names the API
+  reports (`laravel_mysql`, `aws_rds_mysql`, `aws_rds_postgres`,
+  `neon_serverless_postgres`). A versioned type (`laravel_mysql_84`) stays as
+  configured when the API reports its engine family.
+- `domains`: `cloudflare_strategy`, `allow_downtime` and `verification_method`
+  are sent on create, and `dns_records` exposes the records Laravel Cloud asks
+  for (`dcv`, `origin`, `origin_cname`, `pre_verification` as
+  `{type, name, value}` objects, and `ssl`).
+- `applications`: `source_control_provider_type` and `cluster_id` are sent on
+  create.
+- Import tests that run Terraform against a fake API, a live acceptance test
+  (`TestAccImportExisting`) that imports existing resources without changing
+  them, and a CI job running the tests.
 
 ### Fixed
 
-- `laravelcloud_instances` is now usable for managed queues. Previously it
-  failed at every stage:
-  - The required `shutdown_timeout` attribute carried an
-    `int64validator.Between(1, 0)` validator (min greater than max), which
-    errors on construction and made `terraform validate` fail for any
-    configuration using the resource. Corrected to `int64validator.AtLeast(1)`
-    in `provider_code_spec.json` so it survives regeneration.
-  - The create/update request always sent `min_replicas`/`max_replicas` and
-    never sent `polling_interval`/`visibility_timeout`/`shutdown_timeout`. The
-    API rejects `min_replicas` for managed queues and requires the queue-timing
-    fields. The payload now branches on `type`.
-  - The computed attributes `is_default`, `paused`, `queue_status`,
-    `sleep_with_app` (and the queue-timing fields) were not mapped back from the
-    API response, producing "invalid result object after apply" errors. They are
-    now mapped.
-  - The nested `background_processes` attributes were `Optional + Computed`;
-    because the API does not echo background processes, unset fields stayed
-    unknown after apply and triggered the same error. They are now `Optional`.
+- `applications`: reading failed because the API returns `repository` as an
+  object; it now maps to the repository's full name.
+- `domains`: every read failed with a value conversion error; the resource now
+  uses the full schema.
+- `environments`: `branch` was read as empty, which planned a replacement after
+  an import. It is now read from the sideloaded branch (`?include=branch`).
+- `instances` is usable for managed queues and imports app instances:
+  - `shutdown_timeout` carried `int64validator.Between(1, 0)`, which fails on
+    construction, so `terraform validate` failed for any configuration using
+    the resource. It is now `AtLeast(1)`.
+  - `polling_interval`, `visibility_timeout`, `shutdown_timeout` and
+    `min_replicas` are optional; the queue settings only apply to managed
+    queues and are null for app and service instances.
+  - The request payload depends on `type`: managed queues send the queue
+    settings and never `min_replicas`, which the API rejects for them; other
+    types send `min_replicas` and no queue settings. Unset optional settings
+    are no longer sent as zero values.
+  - Every attribute the API returns (`is_default`, `paused`, `queue_status`,
+    `sleep_with_app`, the queue settings, ...) is read, so none stay unknown
+    after apply.
+  - The nested `background_processes` attributes are optional but not
+    computed: the API does not echo them, so unset fields stayed unknown
+    after apply.
+- `database_clusters` and `background_processes`: `config` is read back, so an
+  import matches the configuration and drift is detected. Cluster settings are
+  sent as JSON booleans and numbers instead of strings.
+- `database_clusters` and `domains`: changing any attribute while an optional
+  replacement-forcing attribute (`cluster_id`, `cloudflare_strategy`,
+  `wildcard_enabled`, `www_redirect`) was unset planned to replace the
+  resource. Those attributes now keep their state value.
+- `buckets`: the fields inside `cors_settings` are optional but not computed.
+  The API does not echo them, so any field left out of a configured
+  `cors_settings` stayed unknown and the apply failed.
+- `buckets`: importing a bucket planned to replace it, because `jurisdiction`,
+  `key_name` and `key_permission` were never read back. `jurisdiction` is now
+  read, and an import adopts the bucket's first key (`?include=keys`); a
+  bucket without keys takes the configured key inputs in place.
 
-## [0.1.0]
+### Notes
+
+- The schema is still generated from the OpenAPI document pinned in
+  `generator/docs.openapi.json`. Where it disagrees with the live API, the
+  preprocessor now corrects it (`generator/preprocess/schema_fixes.go`), so
+  `make generate` reproduces the fixes. Schema changes the generators cannot
+  express are applied in the hand-written resource (`background_processes`
+  on instances).
+- A cluster `config` listing only some settings shows one in-place update
+  after an import (the import reads every setting); it is stable afterwards.
+
+## [0.1.0] — 2026-06-25
 
 Initial release. Generated from the Laravel Cloud OpenAPI document with
 hand-written CRUD.

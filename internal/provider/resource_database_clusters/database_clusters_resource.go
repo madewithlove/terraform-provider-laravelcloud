@@ -5,7 +5,12 @@ package resource_database_clusters
 
 import (
 	"context"
+	"encoding/json"
+	"regexp"
+	"strconv"
+
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -44,7 +49,10 @@ func (r *databaseClustersResource) Schema(ctx context.Context, _ resource.Schema
 	// The update endpoint only accepts "config"; every other create input is
 	// immutable in place and forces replacement.
 	providerutil.RequiresReplace(s.Attributes, "cluster_id", "name", "region", "type")
-	providerutil.UseStateForUnknown(s.Attributes, "id", "database")
+	// cluster_id is optional and computed and forces replacement: without
+	// UseStateForUnknown, leaving it unset would plan it as unknown on every
+	// change and replace the cluster.
+	providerutil.UseStateForUnknown(s.Attributes, "id", "database", "cluster_id", "created_at")
 
 	s.MarkdownDescription = "Manages a database cluster in Laravel Cloud."
 	resp.Schema = s
@@ -62,7 +70,7 @@ func (r *databaseClustersResource) Create(ctx context.Context, req resource.Crea
 		"name":   plan.Name.ValueString(),
 		"region": plan.Region.ValueString(),
 	}
-	if v := providerutil.AttrToAny(plan.Config); v != nil {
+	if v := configBody(plan.Config); v != nil {
 		body["config"] = v
 	}
 	if !plan.ClusterId.IsNull() && !plan.ClusterId.IsUnknown() {
@@ -98,6 +106,11 @@ func (r *databaseClustersResource) Read(ctx context.Context, req resource.ReadRe
 	}
 
 	data.apply(&state)
+	// Only a read maps config back: after create or update the state must
+	// match the plan, and the API may normalize values (such as sizes).
+	if data.Attributes.Config != nil {
+		state.Config = clusterConfig(data.Attributes.Config, state.Config)
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -110,7 +123,7 @@ func (r *databaseClustersResource) Update(ctx context.Context, req resource.Upda
 
 	// The update endpoint only accepts "config".
 	body := map[string]any{}
-	if v := providerutil.AttrToAny(plan.Config); v != nil {
+	if v := configBody(plan.Config); v != nil {
 		body["config"] = v
 	}
 
@@ -149,45 +162,128 @@ func (r *databaseClustersResource) ImportState(ctx context.Context, req resource
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("database"), parts[0])...)
 }
 
-// databaseClusterData is the JSON:API representation of a database cluster. The
-// "config" block is a polymorphic write-only input preserved from configuration,
-// not mapped back here.
+// databaseClusterData is the JSON:API representation of a database cluster.
 type databaseClusterData struct {
 	ID         string `json:"id"`
 	Attributes struct {
-		ClusterId *int64  `json:"cluster_id"`
-		Name      string  `json:"name"`
-		Region    string  `json:"region"`
-		Type      string  `json:"type"`
-		Status    *string `json:"status"`
-		CreatedAt *string `json:"created_at"`
+		ClusterId *int64         `json:"cluster_id"`
+		Name      string         `json:"name"`
+		Region    string         `json:"region"`
+		Type      string         `json:"type"`
+		Status    *string        `json:"status"`
+		CreatedAt *string        `json:"created_at"`
+		Config    map[string]any `json:"config"`
 	} `json:"attributes"`
 }
 
 func (d *databaseClusterData) apply(m *DatabaseClustersModel) {
+	a := d.Attributes
 	m.Id = types.StringValue(d.ID)
 	m.Database = types.StringValue(d.ID)
-	m.Name = types.StringValue(d.Attributes.Name)
-	m.Region = types.StringValue(d.Attributes.Region)
-	m.Type = types.StringValue(d.Attributes.Type)
+	m.Name = types.StringValue(a.Name)
+	m.Region = types.StringValue(a.Region)
+	m.Type = types.StringValue(clusterType(a.Type, m.Type))
+	m.Status = providerutil.OptionalString(a.Status)
+	m.CreatedAt = providerutil.OptionalString(a.CreatedAt)
 
-	if d.Attributes.ClusterId != nil {
-		m.ClusterId = types.Int64Value(*d.Attributes.ClusterId)
+	// The API does not echo cluster_id; keep what was configured.
+	if a.ClusterId != nil {
+		m.ClusterId = types.Int64Value(*a.ClusterId)
 	} else {
-		m.ClusterId = types.Int64Null()
-	}
-	if d.Attributes.Status != nil {
-		m.Status = types.StringValue(*d.Attributes.Status)
-	} else {
-		m.Status = types.StringNull()
-	}
-	if d.Attributes.CreatedAt != nil {
-		m.CreatedAt = types.StringValue(*d.Attributes.CreatedAt)
-	} else {
-		m.CreatedAt = types.StringNull()
+		m.ClusterId = providerutil.KnownInt64(m.ClusterId)
 	}
 
 	// connection_details is a computed nested block we do not map back; leave it
-	// null so the value is known. "config" is preserved from the plan/state.
+	// null so the value is known.
 	m.ConnectionDetails = NewConnectionDetailsValueNull()
+}
+
+// versionSuffix matches the engine version the create request appends to a
+// cluster type, as in "laravel_mysql_84" or "neon_serverless_postgres_17".
+var versionSuffix = regexp.MustCompile(`_[0-9]+$`)
+
+// clusterType reconciles the type the API reports with the configured one.
+// The API reports the engine family without its version ("laravel_mysql"),
+// while a cluster may have been created with a versioned type
+// ("laravel_mysql_84"). When the configured type belongs to the reported
+// family, keep the configured value so it neither drifts nor forces a
+// replacement.
+func clusterType(reported string, prior types.String) string {
+	if prior.IsNull() || prior.IsUnknown() {
+		return reported
+	}
+	configured := prior.ValueString()
+	if configured == reported || versionSuffix.ReplaceAllString(configured, "") == reported {
+		return configured
+	}
+	return reported
+}
+
+// clusterConfig converts the API's typed config object into the string map the
+// schema exposes. When there is a prior config (from the plan or state), only
+// its keys are kept, so a configuration listing a subset of the settings does
+// not drift; on import every non-null setting is read.
+func clusterConfig(reported map[string]any, prior types.Map) types.Map {
+	values := map[string]attr.Value{}
+	if !prior.IsNull() && !prior.IsUnknown() {
+		for key, value := range prior.Elements() {
+			if v, ok := reported[key]; ok && v != nil {
+				values[key] = types.StringValue(configString(v))
+			} else {
+				values[key] = value
+			}
+		}
+	} else {
+		for key, v := range reported {
+			if v != nil {
+				values[key] = types.StringValue(configString(v))
+			}
+		}
+	}
+	return types.MapValueMust(types.StringType, values)
+}
+
+func configString(v any) string {
+	switch t := v.(type) {
+	case string:
+		return t
+	case bool:
+		return strconv.FormatBool(t)
+	case float64:
+		return strconv.FormatFloat(t, 'f', -1, 64)
+	default:
+		encoded, _ := json.Marshal(t)
+		return string(encoded)
+	}
+}
+
+// configBody converts the configured string map into a request body, sending
+// booleans and numbers as JSON booleans and numbers. The API validates config
+// settings by type and rejects, for example, the string "false" for a boolean.
+func configBody(config types.Map) map[string]any {
+	if config.IsNull() || config.IsUnknown() {
+		return nil
+	}
+	body := map[string]any{}
+	for key, value := range config.Elements() {
+		s, ok := value.(types.String)
+		if !ok || s.IsNull() || s.IsUnknown() {
+			continue
+		}
+		body[key] = typedConfigValue(s.ValueString())
+	}
+	return body
+}
+
+func typedConfigValue(s string) any {
+	if s == "true" || s == "false" {
+		return s == "true"
+	}
+	if i, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return i
+	}
+	if f, err := strconv.ParseFloat(s, 64); err == nil {
+		return f
+	}
+	return s
 }

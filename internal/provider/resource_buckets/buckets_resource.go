@@ -5,11 +5,13 @@ package resource_buckets
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/cloud"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/providerutil"
@@ -41,12 +43,22 @@ func (r *bucketsResource) Configure(_ context.Context, req resource.ConfigureReq
 func (r *bucketsResource) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	s := BucketsResourceSchema(ctx)
 
-	// key_name, key_permission and jurisdiction are write-only, create-only
-	// inputs (never echoed back), so make them plain inputs that force
-	// replacement when changed. cors_settings and allowed_origins are write-only
-	// inputs preserved from configuration.
+	// key_name, key_permission and jurisdiction are create-only inputs, so make
+	// them plain inputs that force replacement when changed. The API reports the
+	// jurisdiction, and Read fills in the bucket's first key after an import.
+	// When that leaves a key input null (a bucket without keys), adopting the
+	// configured value must not replace the bucket. cors_settings and
+	// allowed_origins are write-only inputs preserved from configuration.
 	providerutil.Input(s.Attributes, "key_name", "key_permission", "jurisdiction", "cors_settings", "allowed_origins")
-	providerutil.RequiresReplace(s.Attributes, "key_name", "key_permission", "jurisdiction")
+	// The fields inside cors_settings are never read back either. Left
+	// computed, any field missing from the configuration would stay unknown
+	// after apply, which Terraform rejects.
+	if cors, ok := s.Attributes["cors_settings"].(schema.SingleNestedAttribute); ok {
+		providerutil.Input(cors.Attributes, "allowed_headers", "allowed_methods", "allowed_origins", "expose_headers", "max_age_seconds")
+		s.Attributes["cors_settings"] = cors
+	}
+	providerutil.RequiresReplace(s.Attributes, "jurisdiction")
+	providerutil.RequiresReplaceUnlessUnset(s.Attributes, "key_name", "key_permission")
 	providerutil.UseStateForUnknown(s.Attributes, "id", "filesystem")
 
 	s.MarkdownDescription = "Manages an object storage bucket in Laravel Cloud."
@@ -91,9 +103,16 @@ func (r *bucketsResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
+	// The key inputs are never read back, except after an import, when the
+	// state has none yet: then adopt the bucket's first key.
 	var data bucketData
+	var included []cloud.Included
 	endpoint := fmt.Sprintf("/buckets/%s", state.Filesystem.ValueString())
-	if err := r.client.Do(ctx, http.MethodGet, endpoint, nil, &data); err != nil {
+	adoptKey := state.KeyName.IsNull() && state.KeyPermission.IsNull()
+	if adoptKey {
+		endpoint += "?include=keys"
+	}
+	if err := r.client.DoWithIncluded(ctx, http.MethodGet, endpoint, nil, &data, &included); err != nil {
 		if cloud.NotFound(err) {
 			resp.State.RemoveResource(ctx)
 			return
@@ -103,6 +122,12 @@ func (r *bucketsResource) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	data.apply(&state)
+	if adoptKey {
+		if key := firstKey(included); key != nil {
+			state.KeyName = types.StringValue(key.Name)
+			state.KeyPermission = types.StringValue(key.Permission)
+		}
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -164,17 +189,18 @@ func (r *bucketsResource) ImportState(ctx context.Context, req resource.ImportSt
 }
 
 // bucketData is the JSON:API representation of a bucket. The write-only inputs
-// (key_name, key_permission, jurisdiction, cors_settings, allowed_origins) are
-// preserved from configuration, not mapped back.
+// (key_name, key_permission, cors_settings, allowed_origins) are preserved from
+// configuration, not mapped back.
 type bucketData struct {
 	ID         string `json:"id"`
 	Attributes struct {
-		Name       string  `json:"name"`
-		Visibility string  `json:"visibility"`
-		Endpoint   *string `json:"endpoint"`
-		Status     *string `json:"status"`
-		Url        *string `json:"url"`
-		CreatedAt  *string `json:"created_at"`
+		Name         string  `json:"name"`
+		Visibility   string  `json:"visibility"`
+		Jurisdiction *string `json:"jurisdiction"`
+		Endpoint     *string `json:"endpoint"`
+		Status       *string `json:"status"`
+		Url          *string `json:"url"`
+		CreatedAt    *string `json:"created_at"`
 	} `json:"attributes"`
 }
 
@@ -183,10 +209,40 @@ func (d *bucketData) apply(m *BucketsModel) {
 	m.Filesystem = types.StringValue(d.ID)
 	m.Name = types.StringValue(d.Attributes.Name)
 	m.Visibility = types.StringValue(d.Attributes.Visibility)
+	if d.Attributes.Jurisdiction != nil {
+		m.Jurisdiction = types.StringValue(*d.Attributes.Jurisdiction)
+	}
 	m.Endpoint = optionalString(d.Attributes.Endpoint)
 	m.Status = optionalString(d.Attributes.Status)
 	m.Url = optionalString(d.Attributes.Url)
 	m.CreatedAt = optionalString(d.Attributes.CreatedAt)
+}
+
+// bucketKey holds the attributes of a sideloaded bucket key that the resource
+// reads. The key's credentials are deliberately not decoded.
+type bucketKey struct {
+	Name       string `json:"name"`
+	Permission string `json:"permission"`
+	CreatedAt  string `json:"created_at"`
+}
+
+// firstKey returns the oldest of the sideloaded "filesystemKeys", which is the
+// key created with the bucket, or nil when there is none.
+func firstKey(included []cloud.Included) *bucketKey {
+	var first *bucketKey
+	for _, inc := range included {
+		if inc.Type != "filesystemKeys" {
+			continue
+		}
+		var key bucketKey
+		if err := json.Unmarshal(inc.Attributes, &key); err != nil || key.Name == "" || key.Permission == "" {
+			continue
+		}
+		if first == nil || (key.CreatedAt != "" && key.CreatedAt < first.CreatedAt) {
+			first = &key
+		}
+	}
+	return first
 }
 
 func optionalString(s *string) types.String {

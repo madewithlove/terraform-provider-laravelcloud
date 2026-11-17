@@ -26,6 +26,7 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 					Attributes: map[string]schema.Attribute{
 						"command": schema.StringAttribute{
 							Optional:            true,
+							Computed:            true,
 							Description:         "Custom command to run. Required when type is 'custom'. Not applicable for 'worker' type.",
 							MarkdownDescription: "Custom command to run. Required when type is 'custom'. Not applicable for 'worker' type.",
 						},
@@ -33,41 +34,49 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 							Attributes: map[string]schema.Attribute{
 								"backoff": schema.Int64Attribute{
 									Optional:            true,
+									Computed:            true,
 									Description:         "Number of seconds to wait before retrying a failed job. Only applicable for 'worker' type background processes.",
 									MarkdownDescription: "Number of seconds to wait before retrying a failed job. Only applicable for 'worker' type background processes.",
 								},
 								"connection": schema.StringAttribute{
 									Optional:            true,
+									Computed:            true,
 									Description:         "The queue connection name. Only applicable for 'worker' type background processes. Managed queues must use 'cloud'.",
 									MarkdownDescription: "The queue connection name. Only applicable for 'worker' type background processes. Managed queues must use 'cloud'.",
 								},
 								"force": schema.BoolAttribute{
 									Optional:            true,
+									Computed:            true,
 									Description:         "Force the worker to run even in maintenance mode. Only applicable for 'worker' type background processes.",
 									MarkdownDescription: "Force the worker to run even in maintenance mode. Only applicable for 'worker' type background processes.",
 								},
 								"queue": schema.StringAttribute{
 									Optional:            true,
+									Computed:            true,
 									Description:         "The queue name(s) to process. Can be comma-separated for multiple queues. Only applicable for 'worker' type background processes.",
 									MarkdownDescription: "The queue name(s) to process. Can be comma-separated for multiple queues. Only applicable for 'worker' type background processes.",
 								},
 								"rest": schema.Int64Attribute{
 									Optional:            true,
+									Computed:            true,
 									Description:         "Number of seconds to rest between jobs. Only applicable for 'worker' type background processes.",
 									MarkdownDescription: "Number of seconds to rest between jobs. Only applicable for 'worker' type background processes.",
 								},
 								"sleep": schema.Int64Attribute{
 									Optional:            true,
+									Computed:            true,
 									Description:         "Number of seconds to sleep when no jobs are available. Only applicable for 'worker' type background processes.",
 									MarkdownDescription: "Number of seconds to sleep when no jobs are available. Only applicable for 'worker' type background processes.",
 								},
 								"timeout": schema.Int64Attribute{
 									Optional:            true,
+									Computed:            true,
 									Description:         "Number of seconds a job can run before timing out. Only applicable for 'worker' type background processes.",
 									MarkdownDescription: "Number of seconds a job can run before timing out. Only applicable for 'worker' type background processes.",
 								},
 								"tries": schema.Int64Attribute{
 									Optional:            true,
+									Computed:            true,
 									Description:         "Number of times a job should be attempted. Only applicable for 'worker' type background processes.",
 									MarkdownDescription: "Number of times a job should be attempted. Only applicable for 'worker' type background processes.",
 								},
@@ -78,6 +87,7 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 								},
 							},
 							Optional: true,
+							Computed: true,
 						},
 						"processes": schema.Int64Attribute{
 							Required: true,
@@ -102,6 +112,7 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 					},
 				},
 				Optional: true,
+				Computed: true,
 			},
 			"created_at": schema.StringAttribute{
 				Computed: true,
@@ -133,7 +144,8 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "The maximum number of replicas the instance can scale to. Only applicable to the `custom` scaling type, and rejected when used with `auto`.",
 			},
 			"min_replicas": schema.Int64Attribute{
-				Required:            true,
+				Optional:            true,
+				Computed:            true,
 				Description:         "The minimum number of replicas the instance runs. Only applicable to the `custom` scaling type, and rejected when used with `auto`. Not applicable to managed queues, which always scale to zero when idle.",
 				MarkdownDescription: "The minimum number of replicas the instance runs. Only applicable to the `custom` scaling type, and rejected when used with `auto`. Not applicable to managed queues, which always scale to zero when idle.",
 			},
@@ -149,7 +161,8 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 				MarkdownDescription: "Whether the managed queue is currently paused. Null for non-queue instances.",
 			},
 			"polling_interval": schema.Int64Attribute{
-				Required:            true,
+				Optional:            true,
+				Computed:            true,
 				Description:         "How often, in seconds (1–60), the queue is polled for new jobs. Null for non-queue instances.",
 				MarkdownDescription: "How often, in seconds (1–60), the queue is polled for new jobs. Null for non-queue instances.",
 				Validators: []validator.Int64{
@@ -184,7 +197,8 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 				},
 			},
 			"shutdown_timeout": schema.Int64Attribute{
-				Required: true,
+				Optional: true,
+				Computed: true,
 				Validators: []validator.Int64{
 					int64validator.AtLeast(1),
 				},
@@ -259,6 +273,8 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 					stringvalidator.OneOf(
 						"service",
 						"managed_queue",
+						"app",
+						"queue",
 					),
 				},
 			},
@@ -267,7 +283,8 @@ func InstancesResourceSchema(ctx context.Context) schema.Schema {
 				Computed: true,
 			},
 			"visibility_timeout": schema.Int64Attribute{
-				Required:            true,
+				Optional:            true,
+				Computed:            true,
 				Description:         "How long, in seconds (0–43200), a received job stays hidden from other workers before it becomes available again. Null for non-queue instances.",
 				MarkdownDescription: "How long, in seconds (0–43200), a received job stays hidden from other workers before it becomes available again. Null for non-queue instances.",
 				Validators: []validator.Int64{
