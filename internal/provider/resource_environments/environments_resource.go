@@ -5,6 +5,7 @@ package resource_environments
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -64,6 +65,9 @@ func (r *environmentsResource) Create(ctx context.Context, req resource.CreateRe
 		"branch": plan.Branch.ValueString(),
 		"name":   plan.Name.ValueString(),
 	}
+	if !plan.ClusterId.IsNull() && !plan.ClusterId.IsUnknown() {
+		body["cluster_id"] = plan.ClusterId.ValueString()
+	}
 
 	var data environmentData
 	collection := fmt.Sprintf("/applications/%s/environments", plan.Application.ValueString())
@@ -84,8 +88,9 @@ func (r *environmentsResource) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	var data environmentData
-	endpoint := fmt.Sprintf("/environments/%s", state.Environment.ValueString())
-	if err := r.client.Do(ctx, http.MethodGet, endpoint, nil, &data); err != nil {
+	var included []cloud.Included
+	endpoint := fmt.Sprintf("/environments/%s?include=branch", state.Environment.ValueString())
+	if err := r.client.DoWithIncluded(ctx, http.MethodGet, endpoint, nil, &data, &included); err != nil {
 		if cloud.NotFound(err) {
 			resp.State.RemoveResource(ctx)
 			return
@@ -94,6 +99,7 @@ func (r *environmentsResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
+	data.applyIncluded(included)
 	data.apply(&state)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -133,17 +139,52 @@ func (r *environmentsResource) ImportState(ctx context.Context, req resource.Imp
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("environment"), parts[1])...)
 }
 
-// environmentData is the JSON:API representation of an environment.
+// environmentData is the JSON:API representation of an environment. The API
+// has no "branch" attribute: the branch is a related resource, sideloaded with
+// ?include=branch and resolved by applyIncluded.
 type environmentData struct {
 	ID         string `json:"id"`
 	Attributes struct {
-		Name   string `json:"name"`
-		Branch string `json:"branch"`
+		Name string `json:"name"`
 	} `json:"attributes"`
+	Relationships struct {
+		Branch struct {
+			Data *struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		} `json:"branch"`
+	} `json:"relationships"`
+
+	branch string
+}
+
+// applyIncluded resolves the environment's branch name from the sideloaded
+// "branches" resources.
+func (d *environmentData) applyIncluded(included []cloud.Included) {
+	for _, inc := range included {
+		if inc.Type != "branches" {
+			continue
+		}
+		if ref := d.Relationships.Branch.Data; ref != nil && ref.ID != inc.ID {
+			continue
+		}
+		var attributes struct {
+			Name string `json:"name"`
+		}
+		if err := json.Unmarshal(inc.Attributes, &attributes); err == nil && attributes.Name != "" {
+			d.branch = attributes.Name
+			return
+		}
+	}
 }
 
 func (d *environmentData) apply(m *EnvironmentsModel) {
 	m.Environment = types.StringValue(d.ID)
 	m.Name = types.StringValue(d.Attributes.Name)
-	m.Branch = types.StringValue(d.Attributes.Branch)
+	// Keep the configured branch when the response does not carry it (create
+	// and update responses are not sideloaded).
+	if d.branch != "" {
+		m.Branch = types.StringValue(d.branch)
+	}
+	m.ClusterId = providerutil.KnownString(m.ClusterId)
 }
