@@ -266,3 +266,53 @@ output "origin_cname" {
 }
 `)
 }
+
+// key_name and key_permission are only sent on create and never read back, so
+// an import leaves them null. That must not plan to replace the bucket.
+func TestImportBucket(t *testing.T) {
+	api := newFakeAPI(t)
+	testImportWithoutChanges(t, api, "laravelcloud_buckets.test", "bucket-test", `
+resource "laravelcloud_buckets" "test" {
+  name           = "ember-uploads"
+  visibility     = "private"
+  jurisdiction   = "eu"
+  key_name       = "ember"
+  key_permission = "read_write"
+}
+`)
+}
+
+// A bucket whose keys were all deleted has no key to read back. Adopting the
+// configured key inputs must then update the bucket in place, not replace it.
+func TestImportBucketWithoutKeysUpdatesInPlace(t *testing.T) {
+	api := newFakeAPI(t)
+	resource.UnitTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: testProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: api.providerConfig() + `
+resource "laravelcloud_buckets" "test" {
+  name           = "ember-uploads"
+  visibility     = "private"
+  jurisdiction   = "eu"
+  key_name       = "ember"
+  key_permission = "read_write"
+}
+`,
+				ResourceName:       "laravelcloud_buckets.test",
+				ImportState:        true,
+				ImportStateKind:    resource.ImportBlockWithID,
+				ImportStateId:      "bucket-without-keys",
+				ExpectNonEmptyPlan: true,
+				ImportPlanChecks: resource.ImportPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction("laravelcloud_buckets.test", plancheck.ResourceActionUpdate),
+					},
+				},
+			},
+		},
+	})
+	if !api.requested("GET /buckets/bucket-without-keys?include=keys") {
+		t.Error("expected the imported bucket to be read with its keys sideloaded")
+	}
+}

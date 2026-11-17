@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -127,6 +128,27 @@ func RequiresReplace(attrs map[string]schema.Attribute, names ...string) {
 			a.PlanModifiers = append(a.PlanModifiers, objectplanmodifier.RequiresReplace())
 			attrs[name] = a
 		}
+	}
+}
+
+// RequiresReplaceUnlessUnset is RequiresReplace for string inputs the API never
+// reports, except that it does not replace the resource when the prior state
+// has no value. That is the case after importing a resource whose input could
+// not be read back: adopting the configured value then updates it in place.
+func RequiresReplaceUnlessUnset(attrs map[string]schema.Attribute, names ...string) {
+	for _, name := range names {
+		a, ok := attrs[name].(schema.StringAttribute)
+		if !ok {
+			panic(fmt.Sprintf("RequiresReplaceUnlessUnset: %q is not a string attribute", name))
+		}
+		a.PlanModifiers = append(a.PlanModifiers, stringplanmodifier.RequiresReplaceIf(
+			func(_ context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+				resp.RequiresReplace = !req.StateValue.IsNull()
+			},
+			"Changing this value replaces the resource, unless it had no value before (after an import).",
+			"Changing this value replaces the resource, unless it had no value before (after an import).",
+		))
+		attrs[name] = a
 	}
 }
 
