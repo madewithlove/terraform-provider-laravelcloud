@@ -1,5 +1,12 @@
 # Laravel Cloud Terraform Provider
 
+> **This provider is no longer maintained.** Laravel now publishes an official
+> provider, [`laravel/laravel`](https://search.opentofu.org/provider/laravel/laravel/latest)
+> ([source](https://github.com/laravel/terraform-provider-laravel)), which covers
+> every resource here and more. Use that one instead. Existing resources move over
+> with `import` blocks: its resources are named `laravel_cloud_*` and import by
+> their Laravel Cloud ID.
+
 A Terraform provider for [Laravel Cloud](https://cloud.laravel.com), with
 resource schemas generated from the official Laravel Cloud OpenAPI document
 (`https://cloud.laravel.com/api-docs/api.json`) using the

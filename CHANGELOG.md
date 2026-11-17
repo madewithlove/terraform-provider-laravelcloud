@@ -4,6 +4,14 @@ All notable changes to this provider are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/), and the provider follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Deprecated
+
+- The provider is no longer maintained: use Laravel's official provider,
+  [`laravel/laravel`](https://search.opentofu.org/provider/laravel/laravel/latest),
+  instead. The provider now shows a deprecation warning when it is configured.
+
 ## [0.3.0] — 2026-11-17
 
 ### Added
