@@ -926,7 +926,7 @@
 												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 											}
 										],
-										"schema_definition": "stringvalidator.OneOf(\n\"laravel_mysql_84\",\n\"laravel_mysql_8\",\n\"aws_rds_mysql_8\",\n\"aws_rds_postgres_18\",\n\"neon_serverless_postgres_18\",\n\"neon_serverless_postgres_17\",\n\"neon_serverless_postgres_16\",\n)"
+										"schema_definition": "stringvalidator.OneOf(\n\"laravel_mysql_84\",\n\"laravel_mysql_8\",\n\"aws_rds_mysql_8\",\n\"aws_rds_postgres_18\",\n\"neon_serverless_postgres_18\",\n\"neon_serverless_postgres_17\",\n\"neon_serverless_postgres_16\",\n\"laravel_mysql\",\n\"aws_rds_mysql\",\n\"aws_rds_postgres\",\n\"neon_serverless_postgres\",\n)"
 									}
 								}
 							]
@@ -1289,26 +1289,106 @@
 							"attributes": [
 								{
 									"name": "dcv",
-									"string": {
-										"computed_optional_required": "computed"
+									"single_nested": {
+										"computed_optional_required": "computed",
+										"attributes": [
+											{
+												"name": "name",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "type",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "value",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											}
+										]
 									}
 								},
 								{
 									"name": "origin",
-									"string": {
-										"computed_optional_required": "computed"
+									"single_nested": {
+										"computed_optional_required": "computed",
+										"attributes": [
+											{
+												"name": "name",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "type",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "value",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											}
+										]
 									}
 								},
 								{
 									"name": "origin_cname",
-									"string": {
-										"computed_optional_required": "computed"
+									"single_nested": {
+										"computed_optional_required": "computed",
+										"attributes": [
+											{
+												"name": "name",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "type",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "value",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											}
+										]
 									}
 								},
 								{
 									"name": "pre_verification",
-									"string": {
-										"computed_optional_required": "computed"
+									"single_nested": {
+										"computed_optional_required": "computed",
+										"attributes": [
+											{
+												"name": "name",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "type",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											},
+											{
+												"name": "value",
+												"string": {
+													"computed_optional_required": "computed"
+												}
+											}
+										]
 									}
 								},
 								{
@@ -1604,7 +1684,7 @@
 					{
 						"name": "min_replicas",
 						"int64": {
-							"computed_optional_required": "required",
+							"computed_optional_required": "computed_optional",
 							"description": "The minimum number of replicas the instance runs. Only applicable to the `custom` scaling type, and rejected when used with `auto`. Not applicable to managed queues, which always scale to zero when idle."
 						}
 					},
@@ -1629,7 +1709,7 @@
 					{
 						"name": "polling_interval",
 						"int64": {
-							"computed_optional_required": "required",
+							"computed_optional_required": "computed_optional",
 							"description": "How often, in seconds (1–60), the queue is polled for new jobs. Null for non-queue instances.",
 							"validators": [
 								{
@@ -1702,19 +1782,7 @@
 					{
 						"name": "shutdown_timeout",
 						"int64": {
-							"computed_optional_required": "required",
-							"validators": [
-								{
-									"custom": {
-										"imports": [
-											{
-												"path": "github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-											}
-										],
-										"schema_definition": "int64validator.Between(1, 0)"
-									}
-								}
-							]
+							"computed_optional_required": "computed_optional"
 						}
 					},
 					{
@@ -1754,7 +1822,7 @@
 												"path": "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 											}
 										],
-										"schema_definition": "stringvalidator.OneOf(\n\"service\",\n\"managed_queue\",\n)"
+										"schema_definition": "stringvalidator.OneOf(\n\"service\",\n\"managed_queue\",\n\"app\",\n\"queue\",\n)"
 									}
 								}
 							]
@@ -1769,7 +1837,7 @@
 					{
 						"name": "visibility_timeout",
 						"int64": {
-							"computed_optional_required": "required",
+							"computed_optional_required": "computed_optional",
 							"description": "How long, in seconds (0–43200), a received job stays hidden from other workers before it becomes available again. Null for non-queue instances.",
 							"validators": [
 								{

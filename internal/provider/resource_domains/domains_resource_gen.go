@@ -45,16 +45,80 @@ func DomainsResourceSchema(ctx context.Context) schema.Schema {
 			},
 			"dns_records": schema.SingleNestedAttribute{
 				Attributes: map[string]schema.Attribute{
-					"dcv": schema.StringAttribute{
+					"dcv": schema.SingleNestedAttribute{
+						Attributes: map[string]schema.Attribute{
+							"name": schema.StringAttribute{
+								Computed: true,
+							},
+							"type": schema.StringAttribute{
+								Computed: true,
+							},
+							"value": schema.StringAttribute{
+								Computed: true,
+							},
+						},
+						CustomType: DcvType{
+							ObjectType: types.ObjectType{
+								AttrTypes: DcvValue{}.AttributeTypes(ctx),
+							},
+						},
 						Computed: true,
 					},
-					"origin": schema.StringAttribute{
+					"origin": schema.SingleNestedAttribute{
+						Attributes: map[string]schema.Attribute{
+							"name": schema.StringAttribute{
+								Computed: true,
+							},
+							"type": schema.StringAttribute{
+								Computed: true,
+							},
+							"value": schema.StringAttribute{
+								Computed: true,
+							},
+						},
+						CustomType: OriginType{
+							ObjectType: types.ObjectType{
+								AttrTypes: OriginValue{}.AttributeTypes(ctx),
+							},
+						},
 						Computed: true,
 					},
-					"origin_cname": schema.StringAttribute{
+					"origin_cname": schema.SingleNestedAttribute{
+						Attributes: map[string]schema.Attribute{
+							"name": schema.StringAttribute{
+								Computed: true,
+							},
+							"type": schema.StringAttribute{
+								Computed: true,
+							},
+							"value": schema.StringAttribute{
+								Computed: true,
+							},
+						},
+						CustomType: OriginCnameType{
+							ObjectType: types.ObjectType{
+								AttrTypes: OriginCnameValue{}.AttributeTypes(ctx),
+							},
+						},
 						Computed: true,
 					},
-					"pre_verification": schema.StringAttribute{
+					"pre_verification": schema.SingleNestedAttribute{
+						Attributes: map[string]schema.Attribute{
+							"name": schema.StringAttribute{
+								Computed: true,
+							},
+							"type": schema.StringAttribute{
+								Computed: true,
+							},
+							"value": schema.StringAttribute{
+								Computed: true,
+							},
+						},
+						CustomType: PreVerificationType{
+							ObjectType: types.ObjectType{
+								AttrTypes: PreVerificationValue{}.AttributeTypes(ctx),
+							},
+						},
 						Computed: true,
 					},
 					"ssl": schema.ListNestedAttribute{
@@ -218,12 +282,12 @@ func (t DnsRecordsType) ValueFromObject(ctx context.Context, in basetypes.Object
 		return nil, diags
 	}
 
-	dcvVal, ok := dcvAttribute.(basetypes.StringValue)
+	dcvVal, ok := dcvAttribute.(basetypes.ObjectValue)
 
 	if !ok {
 		diags.AddError(
 			"Attribute Wrong Type",
-			fmt.Sprintf(`dcv expected to be basetypes.StringValue, was: %T`, dcvAttribute))
+			fmt.Sprintf(`dcv expected to be basetypes.ObjectValue, was: %T`, dcvAttribute))
 	}
 
 	originAttribute, ok := attributes["origin"]
@@ -236,12 +300,12 @@ func (t DnsRecordsType) ValueFromObject(ctx context.Context, in basetypes.Object
 		return nil, diags
 	}
 
-	originVal, ok := originAttribute.(basetypes.StringValue)
+	originVal, ok := originAttribute.(basetypes.ObjectValue)
 
 	if !ok {
 		diags.AddError(
 			"Attribute Wrong Type",
-			fmt.Sprintf(`origin expected to be basetypes.StringValue, was: %T`, originAttribute))
+			fmt.Sprintf(`origin expected to be basetypes.ObjectValue, was: %T`, originAttribute))
 	}
 
 	originCnameAttribute, ok := attributes["origin_cname"]
@@ -254,12 +318,12 @@ func (t DnsRecordsType) ValueFromObject(ctx context.Context, in basetypes.Object
 		return nil, diags
 	}
 
-	originCnameVal, ok := originCnameAttribute.(basetypes.StringValue)
+	originCnameVal, ok := originCnameAttribute.(basetypes.ObjectValue)
 
 	if !ok {
 		diags.AddError(
 			"Attribute Wrong Type",
-			fmt.Sprintf(`origin_cname expected to be basetypes.StringValue, was: %T`, originCnameAttribute))
+			fmt.Sprintf(`origin_cname expected to be basetypes.ObjectValue, was: %T`, originCnameAttribute))
 	}
 
 	preVerificationAttribute, ok := attributes["pre_verification"]
@@ -272,12 +336,12 @@ func (t DnsRecordsType) ValueFromObject(ctx context.Context, in basetypes.Object
 		return nil, diags
 	}
 
-	preVerificationVal, ok := preVerificationAttribute.(basetypes.StringValue)
+	preVerificationVal, ok := preVerificationAttribute.(basetypes.ObjectValue)
 
 	if !ok {
 		diags.AddError(
 			"Attribute Wrong Type",
-			fmt.Sprintf(`pre_verification expected to be basetypes.StringValue, was: %T`, preVerificationAttribute))
+			fmt.Sprintf(`pre_verification expected to be basetypes.ObjectValue, was: %T`, preVerificationAttribute))
 	}
 
 	sslAttribute, ok := attributes["ssl"]
@@ -385,12 +449,12 @@ func NewDnsRecordsValue(attributeTypes map[string]attr.Type, attributes map[stri
 		return NewDnsRecordsValueUnknown(), diags
 	}
 
-	dcvVal, ok := dcvAttribute.(basetypes.StringValue)
+	dcvVal, ok := dcvAttribute.(basetypes.ObjectValue)
 
 	if !ok {
 		diags.AddError(
 			"Attribute Wrong Type",
-			fmt.Sprintf(`dcv expected to be basetypes.StringValue, was: %T`, dcvAttribute))
+			fmt.Sprintf(`dcv expected to be basetypes.ObjectValue, was: %T`, dcvAttribute))
 	}
 
 	originAttribute, ok := attributes["origin"]
@@ -403,12 +467,12 @@ func NewDnsRecordsValue(attributeTypes map[string]attr.Type, attributes map[stri
 		return NewDnsRecordsValueUnknown(), diags
 	}
 
-	originVal, ok := originAttribute.(basetypes.StringValue)
+	originVal, ok := originAttribute.(basetypes.ObjectValue)
 
 	if !ok {
 		diags.AddError(
 			"Attribute Wrong Type",
-			fmt.Sprintf(`origin expected to be basetypes.StringValue, was: %T`, originAttribute))
+			fmt.Sprintf(`origin expected to be basetypes.ObjectValue, was: %T`, originAttribute))
 	}
 
 	originCnameAttribute, ok := attributes["origin_cname"]
@@ -421,12 +485,12 @@ func NewDnsRecordsValue(attributeTypes map[string]attr.Type, attributes map[stri
 		return NewDnsRecordsValueUnknown(), diags
 	}
 
-	originCnameVal, ok := originCnameAttribute.(basetypes.StringValue)
+	originCnameVal, ok := originCnameAttribute.(basetypes.ObjectValue)
 
 	if !ok {
 		diags.AddError(
 			"Attribute Wrong Type",
-			fmt.Sprintf(`origin_cname expected to be basetypes.StringValue, was: %T`, originCnameAttribute))
+			fmt.Sprintf(`origin_cname expected to be basetypes.ObjectValue, was: %T`, originCnameAttribute))
 	}
 
 	preVerificationAttribute, ok := attributes["pre_verification"]
@@ -439,12 +503,12 @@ func NewDnsRecordsValue(attributeTypes map[string]attr.Type, attributes map[stri
 		return NewDnsRecordsValueUnknown(), diags
 	}
 
-	preVerificationVal, ok := preVerificationAttribute.(basetypes.StringValue)
+	preVerificationVal, ok := preVerificationAttribute.(basetypes.ObjectValue)
 
 	if !ok {
 		diags.AddError(
 			"Attribute Wrong Type",
-			fmt.Sprintf(`pre_verification expected to be basetypes.StringValue, was: %T`, preVerificationAttribute))
+			fmt.Sprintf(`pre_verification expected to be basetypes.ObjectValue, was: %T`, preVerificationAttribute))
 	}
 
 	sslAttribute, ok := attributes["ssl"]
@@ -547,10 +611,10 @@ func (t DnsRecordsType) ValueType(ctx context.Context) attr.Value {
 var _ basetypes.ObjectValuable = DnsRecordsValue{}
 
 type DnsRecordsValue struct {
-	Dcv             basetypes.StringValue `tfsdk:"dcv"`
-	Origin          basetypes.StringValue `tfsdk:"origin"`
-	OriginCname     basetypes.StringValue `tfsdk:"origin_cname"`
-	PreVerification basetypes.StringValue `tfsdk:"pre_verification"`
+	Dcv             basetypes.ObjectValue `tfsdk:"dcv"`
+	Origin          basetypes.ObjectValue `tfsdk:"origin"`
+	OriginCname     basetypes.ObjectValue `tfsdk:"origin_cname"`
+	PreVerification basetypes.ObjectValue `tfsdk:"pre_verification"`
 	Ssl             basetypes.ListValue   `tfsdk:"ssl"`
 	state           attr.ValueState
 }
@@ -561,10 +625,18 @@ func (v DnsRecordsValue) ToTerraformValue(ctx context.Context) (tftypes.Value, e
 	var val tftypes.Value
 	var err error
 
-	attrTypes["dcv"] = basetypes.StringType{}.TerraformType(ctx)
-	attrTypes["origin"] = basetypes.StringType{}.TerraformType(ctx)
-	attrTypes["origin_cname"] = basetypes.StringType{}.TerraformType(ctx)
-	attrTypes["pre_verification"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["dcv"] = basetypes.ObjectType{
+		AttrTypes: DcvValue{}.AttributeTypes(ctx),
+	}.TerraformType(ctx)
+	attrTypes["origin"] = basetypes.ObjectType{
+		AttrTypes: OriginValue{}.AttributeTypes(ctx),
+	}.TerraformType(ctx)
+	attrTypes["origin_cname"] = basetypes.ObjectType{
+		AttrTypes: OriginCnameValue{}.AttributeTypes(ctx),
+	}.TerraformType(ctx)
+	attrTypes["pre_verification"] = basetypes.ObjectType{
+		AttrTypes: PreVerificationValue{}.AttributeTypes(ctx),
+	}.TerraformType(ctx)
 	attrTypes["ssl"] = basetypes.ListType{
 		ElemType: SslValue{}.Type(ctx),
 	}.TerraformType(ctx)
@@ -644,6 +716,90 @@ func (v DnsRecordsValue) String() string {
 func (v DnsRecordsValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
+	var dcv basetypes.ObjectValue
+
+	if v.Dcv.IsNull() {
+		dcv = types.ObjectNull(
+			DcvValue{}.AttributeTypes(ctx),
+		)
+	}
+
+	if v.Dcv.IsUnknown() {
+		dcv = types.ObjectUnknown(
+			DcvValue{}.AttributeTypes(ctx),
+		)
+	}
+
+	if !v.Dcv.IsNull() && !v.Dcv.IsUnknown() {
+		dcv = types.ObjectValueMust(
+			DcvValue{}.AttributeTypes(ctx),
+			v.Dcv.Attributes(),
+		)
+	}
+
+	var origin basetypes.ObjectValue
+
+	if v.Origin.IsNull() {
+		origin = types.ObjectNull(
+			OriginValue{}.AttributeTypes(ctx),
+		)
+	}
+
+	if v.Origin.IsUnknown() {
+		origin = types.ObjectUnknown(
+			OriginValue{}.AttributeTypes(ctx),
+		)
+	}
+
+	if !v.Origin.IsNull() && !v.Origin.IsUnknown() {
+		origin = types.ObjectValueMust(
+			OriginValue{}.AttributeTypes(ctx),
+			v.Origin.Attributes(),
+		)
+	}
+
+	var originCname basetypes.ObjectValue
+
+	if v.OriginCname.IsNull() {
+		originCname = types.ObjectNull(
+			OriginCnameValue{}.AttributeTypes(ctx),
+		)
+	}
+
+	if v.OriginCname.IsUnknown() {
+		originCname = types.ObjectUnknown(
+			OriginCnameValue{}.AttributeTypes(ctx),
+		)
+	}
+
+	if !v.OriginCname.IsNull() && !v.OriginCname.IsUnknown() {
+		originCname = types.ObjectValueMust(
+			OriginCnameValue{}.AttributeTypes(ctx),
+			v.OriginCname.Attributes(),
+		)
+	}
+
+	var preVerification basetypes.ObjectValue
+
+	if v.PreVerification.IsNull() {
+		preVerification = types.ObjectNull(
+			PreVerificationValue{}.AttributeTypes(ctx),
+		)
+	}
+
+	if v.PreVerification.IsUnknown() {
+		preVerification = types.ObjectUnknown(
+			PreVerificationValue{}.AttributeTypes(ctx),
+		)
+	}
+
+	if !v.PreVerification.IsNull() && !v.PreVerification.IsUnknown() {
+		preVerification = types.ObjectValueMust(
+			PreVerificationValue{}.AttributeTypes(ctx),
+			v.PreVerification.Attributes(),
+		)
+	}
+
 	ssl := types.ListValueMust(
 		SslType{
 			basetypes.ObjectType{
@@ -674,10 +830,18 @@ func (v DnsRecordsValue) ToObjectValue(ctx context.Context) (basetypes.ObjectVal
 	}
 
 	attributeTypes := map[string]attr.Type{
-		"dcv":              basetypes.StringType{},
-		"origin":           basetypes.StringType{},
-		"origin_cname":     basetypes.StringType{},
-		"pre_verification": basetypes.StringType{},
+		"dcv": basetypes.ObjectType{
+			AttrTypes: DcvValue{}.AttributeTypes(ctx),
+		},
+		"origin": basetypes.ObjectType{
+			AttrTypes: OriginValue{}.AttributeTypes(ctx),
+		},
+		"origin_cname": basetypes.ObjectType{
+			AttrTypes: OriginCnameValue{}.AttributeTypes(ctx),
+		},
+		"pre_verification": basetypes.ObjectType{
+			AttrTypes: PreVerificationValue{}.AttributeTypes(ctx),
+		},
 		"ssl": basetypes.ListType{
 			ElemType: SslValue{}.Type(ctx),
 		},
@@ -694,10 +858,10 @@ func (v DnsRecordsValue) ToObjectValue(ctx context.Context) (basetypes.ObjectVal
 	objVal, diags := types.ObjectValue(
 		attributeTypes,
 		map[string]attr.Value{
-			"dcv":              v.Dcv,
-			"origin":           v.Origin,
-			"origin_cname":     v.OriginCname,
-			"pre_verification": v.PreVerification,
+			"dcv":              dcv,
+			"origin":           origin,
+			"origin_cname":     originCname,
+			"pre_verification": preVerification,
 			"ssl":              ssl,
 		})
 
@@ -752,13 +916,1757 @@ func (v DnsRecordsValue) Type(ctx context.Context) attr.Type {
 
 func (v DnsRecordsValue) AttributeTypes(ctx context.Context) map[string]attr.Type {
 	return map[string]attr.Type{
-		"dcv":              basetypes.StringType{},
-		"origin":           basetypes.StringType{},
-		"origin_cname":     basetypes.StringType{},
-		"pre_verification": basetypes.StringType{},
+		"dcv": basetypes.ObjectType{
+			AttrTypes: DcvValue{}.AttributeTypes(ctx),
+		},
+		"origin": basetypes.ObjectType{
+			AttrTypes: OriginValue{}.AttributeTypes(ctx),
+		},
+		"origin_cname": basetypes.ObjectType{
+			AttrTypes: OriginCnameValue{}.AttributeTypes(ctx),
+		},
+		"pre_verification": basetypes.ObjectType{
+			AttrTypes: PreVerificationValue{}.AttributeTypes(ctx),
+		},
 		"ssl": basetypes.ListType{
 			ElemType: SslValue{}.Type(ctx),
 		},
+	}
+}
+
+var _ basetypes.ObjectTypable = DcvType{}
+
+type DcvType struct {
+	basetypes.ObjectType
+}
+
+func (t DcvType) Equal(o attr.Type) bool {
+	other, ok := o.(DcvType)
+
+	if !ok {
+		return false
+	}
+
+	return t.ObjectType.Equal(other.ObjectType)
+}
+
+func (t DcvType) String() string {
+	return "DcvType"
+}
+
+func (t DcvType) ValueFromObject(ctx context.Context, in basetypes.ObjectValue) (basetypes.ObjectValuable, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributes := in.Attributes()
+
+	nameAttribute, ok := attributes["name"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`name is missing from object`)
+
+		return nil, diags
+	}
+
+	nameVal, ok := nameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`name expected to be basetypes.StringValue, was: %T`, nameAttribute))
+	}
+
+	typeAttribute, ok := attributes["type"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`type is missing from object`)
+
+		return nil, diags
+	}
+
+	typeVal, ok := typeAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`type expected to be basetypes.StringValue, was: %T`, typeAttribute))
+	}
+
+	valueAttribute, ok := attributes["value"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`value is missing from object`)
+
+		return nil, diags
+	}
+
+	valueVal, ok := valueAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`value expected to be basetypes.StringValue, was: %T`, valueAttribute))
+	}
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	return DcvValue{
+		Name:    nameVal,
+		DcvType: typeVal,
+		Value:   valueVal,
+		state:   attr.ValueStateKnown,
+	}, diags
+}
+
+func NewDcvValueNull() DcvValue {
+	return DcvValue{
+		state: attr.ValueStateNull,
+	}
+}
+
+func NewDcvValueUnknown() DcvValue {
+	return DcvValue{
+		state: attr.ValueStateUnknown,
+	}
+}
+
+func NewDcvValue(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) (DcvValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	// Reference: https://github.com/hashicorp/terraform-plugin-framework/issues/521
+	ctx := context.Background()
+
+	for name, attributeType := range attributeTypes {
+		attribute, ok := attributes[name]
+
+		if !ok {
+			diags.AddError(
+				"Missing DcvValue Attribute Value",
+				"While creating a DcvValue value, a missing attribute value was detected. "+
+					"A DcvValue must contain values for all attributes, even if null or unknown. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("DcvValue Attribute Name (%s) Expected Type: %s", name, attributeType.String()),
+			)
+
+			continue
+		}
+
+		if !attributeType.Equal(attribute.Type(ctx)) {
+			diags.AddError(
+				"Invalid DcvValue Attribute Type",
+				"While creating a DcvValue value, an invalid attribute value was detected. "+
+					"A DcvValue must use a matching attribute type for the value. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("DcvValue Attribute Name (%s) Expected Type: %s\n", name, attributeType.String())+
+					fmt.Sprintf("DcvValue Attribute Name (%s) Given Type: %s", name, attribute.Type(ctx)),
+			)
+		}
+	}
+
+	for name := range attributes {
+		_, ok := attributeTypes[name]
+
+		if !ok {
+			diags.AddError(
+				"Extra DcvValue Attribute Value",
+				"While creating a DcvValue value, an extra attribute value was detected. "+
+					"A DcvValue must not contain values beyond the expected attribute types. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("Extra DcvValue Attribute Name: %s", name),
+			)
+		}
+	}
+
+	if diags.HasError() {
+		return NewDcvValueUnknown(), diags
+	}
+
+	nameAttribute, ok := attributes["name"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`name is missing from object`)
+
+		return NewDcvValueUnknown(), diags
+	}
+
+	nameVal, ok := nameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`name expected to be basetypes.StringValue, was: %T`, nameAttribute))
+	}
+
+	typeAttribute, ok := attributes["type"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`type is missing from object`)
+
+		return NewDcvValueUnknown(), diags
+	}
+
+	typeVal, ok := typeAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`type expected to be basetypes.StringValue, was: %T`, typeAttribute))
+	}
+
+	valueAttribute, ok := attributes["value"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`value is missing from object`)
+
+		return NewDcvValueUnknown(), diags
+	}
+
+	valueVal, ok := valueAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`value expected to be basetypes.StringValue, was: %T`, valueAttribute))
+	}
+
+	if diags.HasError() {
+		return NewDcvValueUnknown(), diags
+	}
+
+	return DcvValue{
+		Name:    nameVal,
+		DcvType: typeVal,
+		Value:   valueVal,
+		state:   attr.ValueStateKnown,
+	}, diags
+}
+
+func NewDcvValueMust(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) DcvValue {
+	object, diags := NewDcvValue(attributeTypes, attributes)
+
+	if diags.HasError() {
+		// This could potentially be added to the diag package.
+		diagsStrings := make([]string, 0, len(diags))
+
+		for _, diagnostic := range diags {
+			diagsStrings = append(diagsStrings, fmt.Sprintf(
+				"%s | %s | %s",
+				diagnostic.Severity(),
+				diagnostic.Summary(),
+				diagnostic.Detail()))
+		}
+
+		panic("NewDcvValueMust received error(s): " + strings.Join(diagsStrings, "\n"))
+	}
+
+	return object
+}
+
+func (t DcvType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
+	if in.Type() == nil {
+		return NewDcvValueNull(), nil
+	}
+
+	if !in.Type().Equal(t.TerraformType(ctx)) {
+		return nil, fmt.Errorf("expected %s, got %s", t.TerraformType(ctx), in.Type())
+	}
+
+	if !in.IsKnown() {
+		return NewDcvValueUnknown(), nil
+	}
+
+	if in.IsNull() {
+		return NewDcvValueNull(), nil
+	}
+
+	attributes := map[string]attr.Value{}
+
+	val := map[string]tftypes.Value{}
+
+	err := in.As(&val)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range val {
+		a, err := t.AttrTypes[k].ValueFromTerraform(ctx, v)
+
+		if err != nil {
+			return nil, err
+		}
+
+		attributes[k] = a
+	}
+
+	return NewDcvValueMust(DcvValue{}.AttributeTypes(ctx), attributes), nil
+}
+
+func (t DcvType) ValueType(ctx context.Context) attr.Value {
+	return DcvValue{}
+}
+
+var _ basetypes.ObjectValuable = DcvValue{}
+
+type DcvValue struct {
+	Name    basetypes.StringValue `tfsdk:"name"`
+	DcvType basetypes.StringValue `tfsdk:"type"`
+	Value   basetypes.StringValue `tfsdk:"value"`
+	state   attr.ValueState
+}
+
+func (v DcvValue) ToTerraformValue(ctx context.Context) (tftypes.Value, error) {
+	attrTypes := make(map[string]tftypes.Type, 3)
+
+	var val tftypes.Value
+	var err error
+
+	attrTypes["name"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["type"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["value"] = basetypes.StringType{}.TerraformType(ctx)
+
+	objectType := tftypes.Object{AttributeTypes: attrTypes}
+
+	switch v.state {
+	case attr.ValueStateKnown:
+		vals := make(map[string]tftypes.Value, 3)
+
+		val, err = v.Name.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["name"] = val
+
+		val, err = v.DcvType.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["type"] = val
+
+		val, err = v.Value.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["value"] = val
+
+		if err := tftypes.ValidateValue(objectType, vals); err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		return tftypes.NewValue(objectType, vals), nil
+	case attr.ValueStateNull:
+		return tftypes.NewValue(objectType, nil), nil
+	case attr.ValueStateUnknown:
+		return tftypes.NewValue(objectType, tftypes.UnknownValue), nil
+	default:
+		panic(fmt.Sprintf("unhandled Object state in ToTerraformValue: %s", v.state))
+	}
+}
+
+func (v DcvValue) IsNull() bool {
+	return v.state == attr.ValueStateNull
+}
+
+func (v DcvValue) IsUnknown() bool {
+	return v.state == attr.ValueStateUnknown
+}
+
+func (v DcvValue) String() string {
+	return "DcvValue"
+}
+
+func (v DcvValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributeTypes := map[string]attr.Type{
+		"name":  basetypes.StringType{},
+		"type":  basetypes.StringType{},
+		"value": basetypes.StringType{},
+	}
+
+	if v.IsNull() {
+		return types.ObjectNull(attributeTypes), diags
+	}
+
+	if v.IsUnknown() {
+		return types.ObjectUnknown(attributeTypes), diags
+	}
+
+	objVal, diags := types.ObjectValue(
+		attributeTypes,
+		map[string]attr.Value{
+			"name":  v.Name,
+			"type":  v.DcvType,
+			"value": v.Value,
+		})
+
+	return objVal, diags
+}
+
+func (v DcvValue) Equal(o attr.Value) bool {
+	other, ok := o.(DcvValue)
+
+	if !ok {
+		return false
+	}
+
+	if v.state != other.state {
+		return false
+	}
+
+	if v.state != attr.ValueStateKnown {
+		return true
+	}
+
+	if !v.Name.Equal(other.Name) {
+		return false
+	}
+
+	if !v.DcvType.Equal(other.DcvType) {
+		return false
+	}
+
+	if !v.Value.Equal(other.Value) {
+		return false
+	}
+
+	return true
+}
+
+func (v DcvValue) Type(ctx context.Context) attr.Type {
+	return DcvType{
+		basetypes.ObjectType{
+			AttrTypes: v.AttributeTypes(ctx),
+		},
+	}
+}
+
+func (v DcvValue) AttributeTypes(ctx context.Context) map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":  basetypes.StringType{},
+		"type":  basetypes.StringType{},
+		"value": basetypes.StringType{},
+	}
+}
+
+var _ basetypes.ObjectTypable = OriginType{}
+
+type OriginType struct {
+	basetypes.ObjectType
+}
+
+func (t OriginType) Equal(o attr.Type) bool {
+	other, ok := o.(OriginType)
+
+	if !ok {
+		return false
+	}
+
+	return t.ObjectType.Equal(other.ObjectType)
+}
+
+func (t OriginType) String() string {
+	return "OriginType"
+}
+
+func (t OriginType) ValueFromObject(ctx context.Context, in basetypes.ObjectValue) (basetypes.ObjectValuable, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributes := in.Attributes()
+
+	nameAttribute, ok := attributes["name"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`name is missing from object`)
+
+		return nil, diags
+	}
+
+	nameVal, ok := nameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`name expected to be basetypes.StringValue, was: %T`, nameAttribute))
+	}
+
+	typeAttribute, ok := attributes["type"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`type is missing from object`)
+
+		return nil, diags
+	}
+
+	typeVal, ok := typeAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`type expected to be basetypes.StringValue, was: %T`, typeAttribute))
+	}
+
+	valueAttribute, ok := attributes["value"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`value is missing from object`)
+
+		return nil, diags
+	}
+
+	valueVal, ok := valueAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`value expected to be basetypes.StringValue, was: %T`, valueAttribute))
+	}
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	return OriginValue{
+		Name:       nameVal,
+		OriginType: typeVal,
+		Value:      valueVal,
+		state:      attr.ValueStateKnown,
+	}, diags
+}
+
+func NewOriginValueNull() OriginValue {
+	return OriginValue{
+		state: attr.ValueStateNull,
+	}
+}
+
+func NewOriginValueUnknown() OriginValue {
+	return OriginValue{
+		state: attr.ValueStateUnknown,
+	}
+}
+
+func NewOriginValue(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) (OriginValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	// Reference: https://github.com/hashicorp/terraform-plugin-framework/issues/521
+	ctx := context.Background()
+
+	for name, attributeType := range attributeTypes {
+		attribute, ok := attributes[name]
+
+		if !ok {
+			diags.AddError(
+				"Missing OriginValue Attribute Value",
+				"While creating a OriginValue value, a missing attribute value was detected. "+
+					"A OriginValue must contain values for all attributes, even if null or unknown. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("OriginValue Attribute Name (%s) Expected Type: %s", name, attributeType.String()),
+			)
+
+			continue
+		}
+
+		if !attributeType.Equal(attribute.Type(ctx)) {
+			diags.AddError(
+				"Invalid OriginValue Attribute Type",
+				"While creating a OriginValue value, an invalid attribute value was detected. "+
+					"A OriginValue must use a matching attribute type for the value. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("OriginValue Attribute Name (%s) Expected Type: %s\n", name, attributeType.String())+
+					fmt.Sprintf("OriginValue Attribute Name (%s) Given Type: %s", name, attribute.Type(ctx)),
+			)
+		}
+	}
+
+	for name := range attributes {
+		_, ok := attributeTypes[name]
+
+		if !ok {
+			diags.AddError(
+				"Extra OriginValue Attribute Value",
+				"While creating a OriginValue value, an extra attribute value was detected. "+
+					"A OriginValue must not contain values beyond the expected attribute types. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("Extra OriginValue Attribute Name: %s", name),
+			)
+		}
+	}
+
+	if diags.HasError() {
+		return NewOriginValueUnknown(), diags
+	}
+
+	nameAttribute, ok := attributes["name"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`name is missing from object`)
+
+		return NewOriginValueUnknown(), diags
+	}
+
+	nameVal, ok := nameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`name expected to be basetypes.StringValue, was: %T`, nameAttribute))
+	}
+
+	typeAttribute, ok := attributes["type"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`type is missing from object`)
+
+		return NewOriginValueUnknown(), diags
+	}
+
+	typeVal, ok := typeAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`type expected to be basetypes.StringValue, was: %T`, typeAttribute))
+	}
+
+	valueAttribute, ok := attributes["value"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`value is missing from object`)
+
+		return NewOriginValueUnknown(), diags
+	}
+
+	valueVal, ok := valueAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`value expected to be basetypes.StringValue, was: %T`, valueAttribute))
+	}
+
+	if diags.HasError() {
+		return NewOriginValueUnknown(), diags
+	}
+
+	return OriginValue{
+		Name:       nameVal,
+		OriginType: typeVal,
+		Value:      valueVal,
+		state:      attr.ValueStateKnown,
+	}, diags
+}
+
+func NewOriginValueMust(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) OriginValue {
+	object, diags := NewOriginValue(attributeTypes, attributes)
+
+	if diags.HasError() {
+		// This could potentially be added to the diag package.
+		diagsStrings := make([]string, 0, len(diags))
+
+		for _, diagnostic := range diags {
+			diagsStrings = append(diagsStrings, fmt.Sprintf(
+				"%s | %s | %s",
+				diagnostic.Severity(),
+				diagnostic.Summary(),
+				diagnostic.Detail()))
+		}
+
+		panic("NewOriginValueMust received error(s): " + strings.Join(diagsStrings, "\n"))
+	}
+
+	return object
+}
+
+func (t OriginType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
+	if in.Type() == nil {
+		return NewOriginValueNull(), nil
+	}
+
+	if !in.Type().Equal(t.TerraformType(ctx)) {
+		return nil, fmt.Errorf("expected %s, got %s", t.TerraformType(ctx), in.Type())
+	}
+
+	if !in.IsKnown() {
+		return NewOriginValueUnknown(), nil
+	}
+
+	if in.IsNull() {
+		return NewOriginValueNull(), nil
+	}
+
+	attributes := map[string]attr.Value{}
+
+	val := map[string]tftypes.Value{}
+
+	err := in.As(&val)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range val {
+		a, err := t.AttrTypes[k].ValueFromTerraform(ctx, v)
+
+		if err != nil {
+			return nil, err
+		}
+
+		attributes[k] = a
+	}
+
+	return NewOriginValueMust(OriginValue{}.AttributeTypes(ctx), attributes), nil
+}
+
+func (t OriginType) ValueType(ctx context.Context) attr.Value {
+	return OriginValue{}
+}
+
+var _ basetypes.ObjectValuable = OriginValue{}
+
+type OriginValue struct {
+	Name       basetypes.StringValue `tfsdk:"name"`
+	OriginType basetypes.StringValue `tfsdk:"type"`
+	Value      basetypes.StringValue `tfsdk:"value"`
+	state      attr.ValueState
+}
+
+func (v OriginValue) ToTerraformValue(ctx context.Context) (tftypes.Value, error) {
+	attrTypes := make(map[string]tftypes.Type, 3)
+
+	var val tftypes.Value
+	var err error
+
+	attrTypes["name"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["type"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["value"] = basetypes.StringType{}.TerraformType(ctx)
+
+	objectType := tftypes.Object{AttributeTypes: attrTypes}
+
+	switch v.state {
+	case attr.ValueStateKnown:
+		vals := make(map[string]tftypes.Value, 3)
+
+		val, err = v.Name.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["name"] = val
+
+		val, err = v.OriginType.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["type"] = val
+
+		val, err = v.Value.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["value"] = val
+
+		if err := tftypes.ValidateValue(objectType, vals); err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		return tftypes.NewValue(objectType, vals), nil
+	case attr.ValueStateNull:
+		return tftypes.NewValue(objectType, nil), nil
+	case attr.ValueStateUnknown:
+		return tftypes.NewValue(objectType, tftypes.UnknownValue), nil
+	default:
+		panic(fmt.Sprintf("unhandled Object state in ToTerraformValue: %s", v.state))
+	}
+}
+
+func (v OriginValue) IsNull() bool {
+	return v.state == attr.ValueStateNull
+}
+
+func (v OriginValue) IsUnknown() bool {
+	return v.state == attr.ValueStateUnknown
+}
+
+func (v OriginValue) String() string {
+	return "OriginValue"
+}
+
+func (v OriginValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributeTypes := map[string]attr.Type{
+		"name":  basetypes.StringType{},
+		"type":  basetypes.StringType{},
+		"value": basetypes.StringType{},
+	}
+
+	if v.IsNull() {
+		return types.ObjectNull(attributeTypes), diags
+	}
+
+	if v.IsUnknown() {
+		return types.ObjectUnknown(attributeTypes), diags
+	}
+
+	objVal, diags := types.ObjectValue(
+		attributeTypes,
+		map[string]attr.Value{
+			"name":  v.Name,
+			"type":  v.OriginType,
+			"value": v.Value,
+		})
+
+	return objVal, diags
+}
+
+func (v OriginValue) Equal(o attr.Value) bool {
+	other, ok := o.(OriginValue)
+
+	if !ok {
+		return false
+	}
+
+	if v.state != other.state {
+		return false
+	}
+
+	if v.state != attr.ValueStateKnown {
+		return true
+	}
+
+	if !v.Name.Equal(other.Name) {
+		return false
+	}
+
+	if !v.OriginType.Equal(other.OriginType) {
+		return false
+	}
+
+	if !v.Value.Equal(other.Value) {
+		return false
+	}
+
+	return true
+}
+
+func (v OriginValue) Type(ctx context.Context) attr.Type {
+	return OriginType{
+		basetypes.ObjectType{
+			AttrTypes: v.AttributeTypes(ctx),
+		},
+	}
+}
+
+func (v OriginValue) AttributeTypes(ctx context.Context) map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":  basetypes.StringType{},
+		"type":  basetypes.StringType{},
+		"value": basetypes.StringType{},
+	}
+}
+
+var _ basetypes.ObjectTypable = OriginCnameType{}
+
+type OriginCnameType struct {
+	basetypes.ObjectType
+}
+
+func (t OriginCnameType) Equal(o attr.Type) bool {
+	other, ok := o.(OriginCnameType)
+
+	if !ok {
+		return false
+	}
+
+	return t.ObjectType.Equal(other.ObjectType)
+}
+
+func (t OriginCnameType) String() string {
+	return "OriginCnameType"
+}
+
+func (t OriginCnameType) ValueFromObject(ctx context.Context, in basetypes.ObjectValue) (basetypes.ObjectValuable, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributes := in.Attributes()
+
+	nameAttribute, ok := attributes["name"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`name is missing from object`)
+
+		return nil, diags
+	}
+
+	nameVal, ok := nameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`name expected to be basetypes.StringValue, was: %T`, nameAttribute))
+	}
+
+	typeAttribute, ok := attributes["type"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`type is missing from object`)
+
+		return nil, diags
+	}
+
+	typeVal, ok := typeAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`type expected to be basetypes.StringValue, was: %T`, typeAttribute))
+	}
+
+	valueAttribute, ok := attributes["value"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`value is missing from object`)
+
+		return nil, diags
+	}
+
+	valueVal, ok := valueAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`value expected to be basetypes.StringValue, was: %T`, valueAttribute))
+	}
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	return OriginCnameValue{
+		Name:            nameVal,
+		OriginCnameType: typeVal,
+		Value:           valueVal,
+		state:           attr.ValueStateKnown,
+	}, diags
+}
+
+func NewOriginCnameValueNull() OriginCnameValue {
+	return OriginCnameValue{
+		state: attr.ValueStateNull,
+	}
+}
+
+func NewOriginCnameValueUnknown() OriginCnameValue {
+	return OriginCnameValue{
+		state: attr.ValueStateUnknown,
+	}
+}
+
+func NewOriginCnameValue(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) (OriginCnameValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	// Reference: https://github.com/hashicorp/terraform-plugin-framework/issues/521
+	ctx := context.Background()
+
+	for name, attributeType := range attributeTypes {
+		attribute, ok := attributes[name]
+
+		if !ok {
+			diags.AddError(
+				"Missing OriginCnameValue Attribute Value",
+				"While creating a OriginCnameValue value, a missing attribute value was detected. "+
+					"A OriginCnameValue must contain values for all attributes, even if null or unknown. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("OriginCnameValue Attribute Name (%s) Expected Type: %s", name, attributeType.String()),
+			)
+
+			continue
+		}
+
+		if !attributeType.Equal(attribute.Type(ctx)) {
+			diags.AddError(
+				"Invalid OriginCnameValue Attribute Type",
+				"While creating a OriginCnameValue value, an invalid attribute value was detected. "+
+					"A OriginCnameValue must use a matching attribute type for the value. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("OriginCnameValue Attribute Name (%s) Expected Type: %s\n", name, attributeType.String())+
+					fmt.Sprintf("OriginCnameValue Attribute Name (%s) Given Type: %s", name, attribute.Type(ctx)),
+			)
+		}
+	}
+
+	for name := range attributes {
+		_, ok := attributeTypes[name]
+
+		if !ok {
+			diags.AddError(
+				"Extra OriginCnameValue Attribute Value",
+				"While creating a OriginCnameValue value, an extra attribute value was detected. "+
+					"A OriginCnameValue must not contain values beyond the expected attribute types. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("Extra OriginCnameValue Attribute Name: %s", name),
+			)
+		}
+	}
+
+	if diags.HasError() {
+		return NewOriginCnameValueUnknown(), diags
+	}
+
+	nameAttribute, ok := attributes["name"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`name is missing from object`)
+
+		return NewOriginCnameValueUnknown(), diags
+	}
+
+	nameVal, ok := nameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`name expected to be basetypes.StringValue, was: %T`, nameAttribute))
+	}
+
+	typeAttribute, ok := attributes["type"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`type is missing from object`)
+
+		return NewOriginCnameValueUnknown(), diags
+	}
+
+	typeVal, ok := typeAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`type expected to be basetypes.StringValue, was: %T`, typeAttribute))
+	}
+
+	valueAttribute, ok := attributes["value"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`value is missing from object`)
+
+		return NewOriginCnameValueUnknown(), diags
+	}
+
+	valueVal, ok := valueAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`value expected to be basetypes.StringValue, was: %T`, valueAttribute))
+	}
+
+	if diags.HasError() {
+		return NewOriginCnameValueUnknown(), diags
+	}
+
+	return OriginCnameValue{
+		Name:            nameVal,
+		OriginCnameType: typeVal,
+		Value:           valueVal,
+		state:           attr.ValueStateKnown,
+	}, diags
+}
+
+func NewOriginCnameValueMust(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) OriginCnameValue {
+	object, diags := NewOriginCnameValue(attributeTypes, attributes)
+
+	if diags.HasError() {
+		// This could potentially be added to the diag package.
+		diagsStrings := make([]string, 0, len(diags))
+
+		for _, diagnostic := range diags {
+			diagsStrings = append(diagsStrings, fmt.Sprintf(
+				"%s | %s | %s",
+				diagnostic.Severity(),
+				diagnostic.Summary(),
+				diagnostic.Detail()))
+		}
+
+		panic("NewOriginCnameValueMust received error(s): " + strings.Join(diagsStrings, "\n"))
+	}
+
+	return object
+}
+
+func (t OriginCnameType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
+	if in.Type() == nil {
+		return NewOriginCnameValueNull(), nil
+	}
+
+	if !in.Type().Equal(t.TerraformType(ctx)) {
+		return nil, fmt.Errorf("expected %s, got %s", t.TerraformType(ctx), in.Type())
+	}
+
+	if !in.IsKnown() {
+		return NewOriginCnameValueUnknown(), nil
+	}
+
+	if in.IsNull() {
+		return NewOriginCnameValueNull(), nil
+	}
+
+	attributes := map[string]attr.Value{}
+
+	val := map[string]tftypes.Value{}
+
+	err := in.As(&val)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range val {
+		a, err := t.AttrTypes[k].ValueFromTerraform(ctx, v)
+
+		if err != nil {
+			return nil, err
+		}
+
+		attributes[k] = a
+	}
+
+	return NewOriginCnameValueMust(OriginCnameValue{}.AttributeTypes(ctx), attributes), nil
+}
+
+func (t OriginCnameType) ValueType(ctx context.Context) attr.Value {
+	return OriginCnameValue{}
+}
+
+var _ basetypes.ObjectValuable = OriginCnameValue{}
+
+type OriginCnameValue struct {
+	Name            basetypes.StringValue `tfsdk:"name"`
+	OriginCnameType basetypes.StringValue `tfsdk:"type"`
+	Value           basetypes.StringValue `tfsdk:"value"`
+	state           attr.ValueState
+}
+
+func (v OriginCnameValue) ToTerraformValue(ctx context.Context) (tftypes.Value, error) {
+	attrTypes := make(map[string]tftypes.Type, 3)
+
+	var val tftypes.Value
+	var err error
+
+	attrTypes["name"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["type"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["value"] = basetypes.StringType{}.TerraformType(ctx)
+
+	objectType := tftypes.Object{AttributeTypes: attrTypes}
+
+	switch v.state {
+	case attr.ValueStateKnown:
+		vals := make(map[string]tftypes.Value, 3)
+
+		val, err = v.Name.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["name"] = val
+
+		val, err = v.OriginCnameType.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["type"] = val
+
+		val, err = v.Value.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["value"] = val
+
+		if err := tftypes.ValidateValue(objectType, vals); err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		return tftypes.NewValue(objectType, vals), nil
+	case attr.ValueStateNull:
+		return tftypes.NewValue(objectType, nil), nil
+	case attr.ValueStateUnknown:
+		return tftypes.NewValue(objectType, tftypes.UnknownValue), nil
+	default:
+		panic(fmt.Sprintf("unhandled Object state in ToTerraformValue: %s", v.state))
+	}
+}
+
+func (v OriginCnameValue) IsNull() bool {
+	return v.state == attr.ValueStateNull
+}
+
+func (v OriginCnameValue) IsUnknown() bool {
+	return v.state == attr.ValueStateUnknown
+}
+
+func (v OriginCnameValue) String() string {
+	return "OriginCnameValue"
+}
+
+func (v OriginCnameValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributeTypes := map[string]attr.Type{
+		"name":  basetypes.StringType{},
+		"type":  basetypes.StringType{},
+		"value": basetypes.StringType{},
+	}
+
+	if v.IsNull() {
+		return types.ObjectNull(attributeTypes), diags
+	}
+
+	if v.IsUnknown() {
+		return types.ObjectUnknown(attributeTypes), diags
+	}
+
+	objVal, diags := types.ObjectValue(
+		attributeTypes,
+		map[string]attr.Value{
+			"name":  v.Name,
+			"type":  v.OriginCnameType,
+			"value": v.Value,
+		})
+
+	return objVal, diags
+}
+
+func (v OriginCnameValue) Equal(o attr.Value) bool {
+	other, ok := o.(OriginCnameValue)
+
+	if !ok {
+		return false
+	}
+
+	if v.state != other.state {
+		return false
+	}
+
+	if v.state != attr.ValueStateKnown {
+		return true
+	}
+
+	if !v.Name.Equal(other.Name) {
+		return false
+	}
+
+	if !v.OriginCnameType.Equal(other.OriginCnameType) {
+		return false
+	}
+
+	if !v.Value.Equal(other.Value) {
+		return false
+	}
+
+	return true
+}
+
+func (v OriginCnameValue) Type(ctx context.Context) attr.Type {
+	return OriginCnameType{
+		basetypes.ObjectType{
+			AttrTypes: v.AttributeTypes(ctx),
+		},
+	}
+}
+
+func (v OriginCnameValue) AttributeTypes(ctx context.Context) map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":  basetypes.StringType{},
+		"type":  basetypes.StringType{},
+		"value": basetypes.StringType{},
+	}
+}
+
+var _ basetypes.ObjectTypable = PreVerificationType{}
+
+type PreVerificationType struct {
+	basetypes.ObjectType
+}
+
+func (t PreVerificationType) Equal(o attr.Type) bool {
+	other, ok := o.(PreVerificationType)
+
+	if !ok {
+		return false
+	}
+
+	return t.ObjectType.Equal(other.ObjectType)
+}
+
+func (t PreVerificationType) String() string {
+	return "PreVerificationType"
+}
+
+func (t PreVerificationType) ValueFromObject(ctx context.Context, in basetypes.ObjectValue) (basetypes.ObjectValuable, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributes := in.Attributes()
+
+	nameAttribute, ok := attributes["name"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`name is missing from object`)
+
+		return nil, diags
+	}
+
+	nameVal, ok := nameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`name expected to be basetypes.StringValue, was: %T`, nameAttribute))
+	}
+
+	typeAttribute, ok := attributes["type"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`type is missing from object`)
+
+		return nil, diags
+	}
+
+	typeVal, ok := typeAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`type expected to be basetypes.StringValue, was: %T`, typeAttribute))
+	}
+
+	valueAttribute, ok := attributes["value"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`value is missing from object`)
+
+		return nil, diags
+	}
+
+	valueVal, ok := valueAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`value expected to be basetypes.StringValue, was: %T`, valueAttribute))
+	}
+
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	return PreVerificationValue{
+		Name:                nameVal,
+		PreVerificationType: typeVal,
+		Value:               valueVal,
+		state:               attr.ValueStateKnown,
+	}, diags
+}
+
+func NewPreVerificationValueNull() PreVerificationValue {
+	return PreVerificationValue{
+		state: attr.ValueStateNull,
+	}
+}
+
+func NewPreVerificationValueUnknown() PreVerificationValue {
+	return PreVerificationValue{
+		state: attr.ValueStateUnknown,
+	}
+}
+
+func NewPreVerificationValue(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) (PreVerificationValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	// Reference: https://github.com/hashicorp/terraform-plugin-framework/issues/521
+	ctx := context.Background()
+
+	for name, attributeType := range attributeTypes {
+		attribute, ok := attributes[name]
+
+		if !ok {
+			diags.AddError(
+				"Missing PreVerificationValue Attribute Value",
+				"While creating a PreVerificationValue value, a missing attribute value was detected. "+
+					"A PreVerificationValue must contain values for all attributes, even if null or unknown. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("PreVerificationValue Attribute Name (%s) Expected Type: %s", name, attributeType.String()),
+			)
+
+			continue
+		}
+
+		if !attributeType.Equal(attribute.Type(ctx)) {
+			diags.AddError(
+				"Invalid PreVerificationValue Attribute Type",
+				"While creating a PreVerificationValue value, an invalid attribute value was detected. "+
+					"A PreVerificationValue must use a matching attribute type for the value. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("PreVerificationValue Attribute Name (%s) Expected Type: %s\n", name, attributeType.String())+
+					fmt.Sprintf("PreVerificationValue Attribute Name (%s) Given Type: %s", name, attribute.Type(ctx)),
+			)
+		}
+	}
+
+	for name := range attributes {
+		_, ok := attributeTypes[name]
+
+		if !ok {
+			diags.AddError(
+				"Extra PreVerificationValue Attribute Value",
+				"While creating a PreVerificationValue value, an extra attribute value was detected. "+
+					"A PreVerificationValue must not contain values beyond the expected attribute types. "+
+					"This is always an issue with the provider and should be reported to the provider developers.\n\n"+
+					fmt.Sprintf("Extra PreVerificationValue Attribute Name: %s", name),
+			)
+		}
+	}
+
+	if diags.HasError() {
+		return NewPreVerificationValueUnknown(), diags
+	}
+
+	nameAttribute, ok := attributes["name"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`name is missing from object`)
+
+		return NewPreVerificationValueUnknown(), diags
+	}
+
+	nameVal, ok := nameAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`name expected to be basetypes.StringValue, was: %T`, nameAttribute))
+	}
+
+	typeAttribute, ok := attributes["type"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`type is missing from object`)
+
+		return NewPreVerificationValueUnknown(), diags
+	}
+
+	typeVal, ok := typeAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`type expected to be basetypes.StringValue, was: %T`, typeAttribute))
+	}
+
+	valueAttribute, ok := attributes["value"]
+
+	if !ok {
+		diags.AddError(
+			"Attribute Missing",
+			`value is missing from object`)
+
+		return NewPreVerificationValueUnknown(), diags
+	}
+
+	valueVal, ok := valueAttribute.(basetypes.StringValue)
+
+	if !ok {
+		diags.AddError(
+			"Attribute Wrong Type",
+			fmt.Sprintf(`value expected to be basetypes.StringValue, was: %T`, valueAttribute))
+	}
+
+	if diags.HasError() {
+		return NewPreVerificationValueUnknown(), diags
+	}
+
+	return PreVerificationValue{
+		Name:                nameVal,
+		PreVerificationType: typeVal,
+		Value:               valueVal,
+		state:               attr.ValueStateKnown,
+	}, diags
+}
+
+func NewPreVerificationValueMust(attributeTypes map[string]attr.Type, attributes map[string]attr.Value) PreVerificationValue {
+	object, diags := NewPreVerificationValue(attributeTypes, attributes)
+
+	if diags.HasError() {
+		// This could potentially be added to the diag package.
+		diagsStrings := make([]string, 0, len(diags))
+
+		for _, diagnostic := range diags {
+			diagsStrings = append(diagsStrings, fmt.Sprintf(
+				"%s | %s | %s",
+				diagnostic.Severity(),
+				diagnostic.Summary(),
+				diagnostic.Detail()))
+		}
+
+		panic("NewPreVerificationValueMust received error(s): " + strings.Join(diagsStrings, "\n"))
+	}
+
+	return object
+}
+
+func (t PreVerificationType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
+	if in.Type() == nil {
+		return NewPreVerificationValueNull(), nil
+	}
+
+	if !in.Type().Equal(t.TerraformType(ctx)) {
+		return nil, fmt.Errorf("expected %s, got %s", t.TerraformType(ctx), in.Type())
+	}
+
+	if !in.IsKnown() {
+		return NewPreVerificationValueUnknown(), nil
+	}
+
+	if in.IsNull() {
+		return NewPreVerificationValueNull(), nil
+	}
+
+	attributes := map[string]attr.Value{}
+
+	val := map[string]tftypes.Value{}
+
+	err := in.As(&val)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range val {
+		a, err := t.AttrTypes[k].ValueFromTerraform(ctx, v)
+
+		if err != nil {
+			return nil, err
+		}
+
+		attributes[k] = a
+	}
+
+	return NewPreVerificationValueMust(PreVerificationValue{}.AttributeTypes(ctx), attributes), nil
+}
+
+func (t PreVerificationType) ValueType(ctx context.Context) attr.Value {
+	return PreVerificationValue{}
+}
+
+var _ basetypes.ObjectValuable = PreVerificationValue{}
+
+type PreVerificationValue struct {
+	Name                basetypes.StringValue `tfsdk:"name"`
+	PreVerificationType basetypes.StringValue `tfsdk:"type"`
+	Value               basetypes.StringValue `tfsdk:"value"`
+	state               attr.ValueState
+}
+
+func (v PreVerificationValue) ToTerraformValue(ctx context.Context) (tftypes.Value, error) {
+	attrTypes := make(map[string]tftypes.Type, 3)
+
+	var val tftypes.Value
+	var err error
+
+	attrTypes["name"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["type"] = basetypes.StringType{}.TerraformType(ctx)
+	attrTypes["value"] = basetypes.StringType{}.TerraformType(ctx)
+
+	objectType := tftypes.Object{AttributeTypes: attrTypes}
+
+	switch v.state {
+	case attr.ValueStateKnown:
+		vals := make(map[string]tftypes.Value, 3)
+
+		val, err = v.Name.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["name"] = val
+
+		val, err = v.PreVerificationType.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["type"] = val
+
+		val, err = v.Value.ToTerraformValue(ctx)
+
+		if err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		vals["value"] = val
+
+		if err := tftypes.ValidateValue(objectType, vals); err != nil {
+			return tftypes.NewValue(objectType, tftypes.UnknownValue), err
+		}
+
+		return tftypes.NewValue(objectType, vals), nil
+	case attr.ValueStateNull:
+		return tftypes.NewValue(objectType, nil), nil
+	case attr.ValueStateUnknown:
+		return tftypes.NewValue(objectType, tftypes.UnknownValue), nil
+	default:
+		panic(fmt.Sprintf("unhandled Object state in ToTerraformValue: %s", v.state))
+	}
+}
+
+func (v PreVerificationValue) IsNull() bool {
+	return v.state == attr.ValueStateNull
+}
+
+func (v PreVerificationValue) IsUnknown() bool {
+	return v.state == attr.ValueStateUnknown
+}
+
+func (v PreVerificationValue) String() string {
+	return "PreVerificationValue"
+}
+
+func (v PreVerificationValue) ToObjectValue(ctx context.Context) (basetypes.ObjectValue, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	attributeTypes := map[string]attr.Type{
+		"name":  basetypes.StringType{},
+		"type":  basetypes.StringType{},
+		"value": basetypes.StringType{},
+	}
+
+	if v.IsNull() {
+		return types.ObjectNull(attributeTypes), diags
+	}
+
+	if v.IsUnknown() {
+		return types.ObjectUnknown(attributeTypes), diags
+	}
+
+	objVal, diags := types.ObjectValue(
+		attributeTypes,
+		map[string]attr.Value{
+			"name":  v.Name,
+			"type":  v.PreVerificationType,
+			"value": v.Value,
+		})
+
+	return objVal, diags
+}
+
+func (v PreVerificationValue) Equal(o attr.Value) bool {
+	other, ok := o.(PreVerificationValue)
+
+	if !ok {
+		return false
+	}
+
+	if v.state != other.state {
+		return false
+	}
+
+	if v.state != attr.ValueStateKnown {
+		return true
+	}
+
+	if !v.Name.Equal(other.Name) {
+		return false
+	}
+
+	if !v.PreVerificationType.Equal(other.PreVerificationType) {
+		return false
+	}
+
+	if !v.Value.Equal(other.Value) {
+		return false
+	}
+
+	return true
+}
+
+func (v PreVerificationValue) Type(ctx context.Context) attr.Type {
+	return PreVerificationType{
+		basetypes.ObjectType{
+			AttrTypes: v.AttributeTypes(ctx),
+		},
+	}
+}
+
+func (v PreVerificationValue) AttributeTypes(ctx context.Context) map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":  basetypes.StringType{},
+		"type":  basetypes.StringType{},
+		"value": basetypes.StringType{},
 	}
 }
 
