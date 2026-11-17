@@ -65,7 +65,16 @@ func (r *instancesResource) Create(ctx context.Context, req resource.CreateReque
 		"size":         plan.Size.ValueString(),
 		"scaling_type": plan.ScalingType.ValueString(),
 		"max_replicas": plan.MaxReplicas.ValueInt64(),
-		"min_replicas": plan.MinReplicas.ValueInt64(),
+	}
+	// Managed queues always scale to zero when idle: the API rejects
+	// min_replicas and instead requires the queue timing fields. Service
+	// instances use min_replicas and omit the queue timing fields.
+	if plan.Type.ValueString() == "managed_queue" {
+		body["polling_interval"] = plan.PollingInterval.ValueInt64()
+		body["visibility_timeout"] = plan.VisibilityTimeout.ValueInt64()
+		body["shutdown_timeout"] = plan.ShutdownTimeout.ValueInt64()
+	} else {
+		body["min_replicas"] = plan.MinReplicas.ValueInt64()
 	}
 	if !plan.ScalingCpuThresholdPercentage.IsNull() && !plan.ScalingCpuThresholdPercentage.IsUnknown() {
 		body["scaling_cpu_threshold_percentage"] = plan.ScalingCpuThresholdPercentage.ValueInt64()
@@ -125,7 +134,13 @@ func (r *instancesResource) Update(ctx context.Context, req resource.UpdateReque
 		"size":         plan.Size.ValueString(),
 		"scaling_type": plan.ScalingType.ValueString(),
 		"max_replicas": plan.MaxReplicas.ValueInt64(),
-		"min_replicas": plan.MinReplicas.ValueInt64(),
+	}
+	if plan.Type.ValueString() == "managed_queue" {
+		body["polling_interval"] = plan.PollingInterval.ValueInt64()
+		body["visibility_timeout"] = plan.VisibilityTimeout.ValueInt64()
+		body["shutdown_timeout"] = plan.ShutdownTimeout.ValueInt64()
+	} else {
+		body["min_replicas"] = plan.MinReplicas.ValueInt64()
 	}
 	if !plan.ScalingCpuThresholdPercentage.IsNull() && !plan.ScalingCpuThresholdPercentage.IsUnknown() {
 		body["scaling_cpu_threshold_percentage"] = plan.ScalingCpuThresholdPercentage.ValueInt64()
@@ -193,6 +208,13 @@ type instanceData struct {
 		ScalingMemoryThresholdPercentage *int64  `json:"scaling_memory_threshold_percentage"`
 		UsesScheduler                    *bool   `json:"uses_scheduler"`
 		CreatedAt                        *string `json:"created_at"`
+		PollingInterval                  *int64  `json:"polling_interval"`
+		VisibilityTimeout                *int64  `json:"visibility_timeout"`
+		ShutdownTimeout                  *int64  `json:"shutdown_timeout"`
+		IsDefault                        *bool   `json:"is_default"`
+		Paused                           *bool   `json:"paused"`
+		QueueStatus                      *string `json:"queue_status"`
+		SleepWithApp                     *bool   `json:"sleep_with_app"`
 	} `json:"attributes"`
 }
 
@@ -214,6 +236,26 @@ func (d *instanceData) apply(m *InstancesModel) {
 		m.UsesScheduler = types.BoolNull()
 	}
 
+	// Queue timing fields are Required in the schema, so only overwrite the
+	// plan/state value when the API actually echoes one (managed queues do;
+	// service instances return null and keep the configured value).
+	if d.Attributes.PollingInterval != nil {
+		m.PollingInterval = types.Int64Value(*d.Attributes.PollingInterval)
+	}
+	if d.Attributes.VisibilityTimeout != nil {
+		m.VisibilityTimeout = types.Int64Value(*d.Attributes.VisibilityTimeout)
+	}
+	if d.Attributes.ShutdownTimeout != nil {
+		m.ShutdownTimeout = types.Int64Value(*d.Attributes.ShutdownTimeout)
+	}
+
+	// Read-only computed fields must always resolve to a known value (or null)
+	// after apply, otherwise Terraform rejects the result object.
+	m.IsDefault = optionalBool(d.Attributes.IsDefault)
+	m.Paused = optionalBool(d.Attributes.Paused)
+	m.QueueStatus = optionalString(d.Attributes.QueueStatus)
+	m.SleepWithApp = optionalBool(d.Attributes.SleepWithApp)
+
 	// background_processes is configuration-driven and not reliably echoed by
 	// the API; keep whatever the plan/state already holds. If it was left
 	// unknown (e.g. a fresh import), normalize it to null.
@@ -227,6 +269,13 @@ func optionalInt64(i *int64) types.Int64 {
 		return types.Int64Null()
 	}
 	return types.Int64Value(*i)
+}
+
+func optionalBool(b *bool) types.Bool {
+	if b == nil {
+		return types.BoolNull()
+	}
+	return types.BoolValue(*b)
 }
 
 func optionalString(s *string) types.String {
