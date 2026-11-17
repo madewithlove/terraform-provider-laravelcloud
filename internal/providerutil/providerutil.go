@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/cloud"
 )
@@ -139,6 +140,9 @@ func UseStateForUnknown(attrs map[string]schema.Attribute, names ...string) {
 			attrs[name] = a
 		case schema.Int64Attribute:
 			a.PlanModifiers = append(a.PlanModifiers, int64planmodifier.UseStateForUnknown())
+			attrs[name] = a
+		case schema.BoolAttribute:
+			a.PlanModifiers = append(a.PlanModifiers, boolplanmodifier.UseStateForUnknown())
 			attrs[name] = a
 		}
 	}
@@ -305,4 +309,54 @@ func ParseID(id string, parts int) ([]string, error) {
 // ParseInt64 parses a string segment of an import ID into an int64.
 func ParseInt64(s string) (int64, error) {
 	return strconv.ParseInt(s, 10, 64)
+}
+
+// KnownString returns v unless it is unknown, in which case it returns null.
+// Optional+Computed inputs the API never echoes back must not stay unknown
+// after apply.
+func KnownString(v types.String) types.String {
+	if v.IsUnknown() {
+		return types.StringNull()
+	}
+	return v
+}
+
+// KnownBool returns v unless it is unknown, in which case it returns null.
+func KnownBool(v types.Bool) types.Bool {
+	if v.IsUnknown() {
+		return types.BoolNull()
+	}
+	return v
+}
+
+// KnownInt64 returns v unless it is unknown, in which case it returns null.
+func KnownInt64(v types.Int64) types.Int64 {
+	if v.IsUnknown() {
+		return types.Int64Null()
+	}
+	return v
+}
+
+// OptionalString converts a nullable API string into a Terraform value.
+func OptionalString(s *string) types.String {
+	if s == nil {
+		return types.StringNull()
+	}
+	return types.StringValue(*s)
+}
+
+// OptionalBool converts a nullable API boolean into a Terraform value.
+func OptionalBool(b *bool) types.Bool {
+	if b == nil {
+		return types.BoolNull()
+	}
+	return types.BoolValue(*b)
+}
+
+// OptionalInt64 converts a nullable API integer into a Terraform value.
+func OptionalInt64(i *int64) types.Int64 {
+	if i == nil {
+		return types.Int64Null()
+	}
+	return types.Int64Value(*i)
 }
