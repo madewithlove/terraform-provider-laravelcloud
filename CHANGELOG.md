@@ -4,7 +4,7 @@ All notable changes to this provider are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/), and the provider follows
 [Semantic Versioning](https://semver.org/).
 
-## [0.2.0] — Unreleased
+## [0.2.0] — 2026-11-17
 
 Existing Laravel Cloud resources can now be imported and adopted: applications,
 environments, app instances, background processes, Laravel MySQL and Neon
