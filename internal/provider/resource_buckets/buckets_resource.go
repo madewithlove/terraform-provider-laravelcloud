@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/cloud"
 	"github.com/madewithlove/terraform-provider-laravelcloud/internal/providerutil"
@@ -49,6 +50,13 @@ func (r *bucketsResource) Schema(ctx context.Context, _ resource.SchemaRequest, 
 	// configured value must not replace the bucket. cors_settings and
 	// allowed_origins are write-only inputs preserved from configuration.
 	providerutil.Input(s.Attributes, "key_name", "key_permission", "jurisdiction", "cors_settings", "allowed_origins")
+	// The fields inside cors_settings are never read back either. Left
+	// computed, any field missing from the configuration would stay unknown
+	// after apply, which Terraform rejects.
+	if cors, ok := s.Attributes["cors_settings"].(schema.SingleNestedAttribute); ok {
+		providerutil.Input(cors.Attributes, "allowed_headers", "allowed_methods", "allowed_origins", "expose_headers", "max_age_seconds")
+		s.Attributes["cors_settings"] = cors
+	}
 	providerutil.RequiresReplace(s.Attributes, "jurisdiction")
 	providerutil.RequiresReplaceUnlessUnset(s.Attributes, "key_name", "key_permission")
 	providerutil.UseStateForUnknown(s.Attributes, "id", "filesystem")
